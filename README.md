@@ -51,27 +51,32 @@ Since calculating oscillation probability entails slightly more computation, the
 This program contains the bulk of the "PRISM" methods, namely the `flux_fitter` object.  This object contains relevant data, including FD flux, oscillation hypothesis, ND flux, as well as parameters to the fit, such as energy range, out-of-region weights, and maximum off-axis distance.
 
 Important methods of this object are:
-	  `set_fit_region(energies = None, peaks = None)`
 
-	  			   This method takes a list of length 2 of either energies or peaks.
+`set_fit_region(energies = None, peaks = None)`
 
-	  			   If the keyword argument `energies` is supplied, the fit will simply use these energies as lower and upper bounds, respectively.
+*** This method takes a list of length 2 of either energies or peaks.
 
-	  			   If the keyword argument `peaks` is supplied instead, the fitter will attempt to find the locations of these peaks and use those as the bounds instead.  Since the oscillation tends to be faster at lower energies, these peaks are counted from the right.  For example, `peaks = [1, 3]` will try to find the highest and third-highest energy peaks and use those.
+*** If the keyword argument `energies` is supplied, the fit will simply use these energies as lower and upper bounds, respectively.
 
-	`set_OOR(weights)`
-		This method sets the weights for the fit outside of the energy region described above.  The default value is `(0, 0)`, meaning that the value of the target flux outside of the region makes no difference to the fit at all.  Usually, however, a small weight on the low-energy side is preferred so that the combined flux does not become too large in the low-energy regions.  For this, about 5% is enough (e.g., `set_OOR((0.05, 0))`).
+*** If the keyword argument `peaks` is supplied instead, the fitter will attempt to find the locations of these peaks and use those as the bounds instead.  Since the oscillation tends to be faster at lower energies, these peaks are counted from the right.  For example, `peaks = [1, 3]` will try to find the highest and third-highest energy peaks and use those.
 
-	`set_oscHypothesis(Posc)`
-		Often, it is desireable to change the oscillation hypothesis without instantiating a new `flux_fitter` object.  This method takes a `numpy` array of oscillation probability (the output of a `oscProb.load()` call) and updates the `Posc`, `FD_oscillated`, and `target` data.
+`set_OOR(weights)`
 
-	`set_maxOA(maxOA)`
-		This method is useful for studying the effects of differing ND hall size on the quality of fits.  Calling this method will update the `maxOA` and `ND` data.
+*** This method sets the weights for the fit outside of the energy region described above.  The default value is `(0, 0)`, meaning that the value of the target flux outside of the region makes no difference to the fit at all.  Usually, however, a small weight on the low-energy side is preferred so that the combined flux does not become too large in the low-energy regions.  For this, about 5% is enough (e.g., `set_OOR((0.05, 0))`).
 
-	`calc_coeffs(reg)`
-		This is perhaps the most interesting part of the flux fitting procedure.  The current version of the coefficient calculation uses [Tikhonov Regularization](https://en.wikipedia.org/wiki/Tikhonov_regularization) to find a solution for the underconstrained problem `dot(ND, c) = FD`.
+`set_oscHypothesis(Posc)`
 
-		The regularization factor, `reg`, quantifies the magnitude of the penalty for very rapidly varying coefficients.  A larger value for `reg` will produce a very smoothly varying (as a function of off-axis position) set of coefficients, while `reg = 0` will reduce to a simple matrix inversion: `c = np.dot(ND.I, FD)`, which will produce a very noisy set of coefficients.  For the usual FD and N normalization, a value of `reg` around 1.e-8 usually produces a sufficiently smooth set of coefficients.
+*** Often, it is desireable to change the oscillation hypothesis without instantiating a new `flux_fitter` object.  This method takes a `numpy` array of oscillation probability (the output of a `oscProb.load()` call) and updates the `Posc`, `FD_oscillated`, and `target` data.
+
+`set_maxOA(maxOA)`
+
+*** This method is useful for studying the effects of differing ND hall size on the quality of fits.  Calling this method will update the `maxOA` and `ND` data.
+
+`calc_coeffs(reg)`
+
+*** This is perhaps the most interesting part of the flux fitting procedure.  The current version of the coefficient calculation uses [Tikhonov Regularization](https://en.wikipedia.org/wiki/Tikhonov_regularization) to find a solution for the underconstrained problem `dot(ND, c) = FD`.
+
+*** The regularization factor, `reg`, quantifies the magnitude of the penalty for very rapidly varying coefficients.  A larger value for `reg` will produce a very smoothly varying (as a function of off-axis position) set of coefficients, while `reg = 0` will reduce to a simple matrix inversion: `c = np.dot(ND.I, FD)`, which will produce a very noisy set of coefficients.  For the usual FD and N normalization, a value of `reg` around 1.e-8 usually produces a sufficiently smooth set of coefficients.
 
 ## Contributing
 
