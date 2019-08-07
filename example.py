@@ -11,7 +11,7 @@ if __name__ == '__main__':
     # use the following oscillation parameters
     dcp = -np.pi/2
     s23 = 0.5
-    dm32 = 2.5e-3
+    dm32 = 3.0e-3
     # a nicely formatted string for plotting
     dm32Pretty = r'$2.4 \times 10^{-3}$'
 

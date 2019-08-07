@@ -2,19 +2,35 @@ import numpy as np
 import scipy.stats as st
 from ROOT import *
 
-def root_to_array(infileName, branchName):
+def root_to_array(infileName, branchName, bins = []):
     infile = TFile(infileName)
     TH = infile.Get(branchName)
-    shape = [TH.GetNbinsX(),
-             TH.GetNbinsY(),
-             TH.GetNbinsZ()]
-    con = np.ndarray(shape)
-    err = np.ndarray(shape)
-    for i in xrange(shape[0]):
-        for j in xrange(shape[1]):
-            for k in xrange(shape[2]):
-                con[i,j,k] = TH.GetBinContent(i+1, j+1, k+1)
-                err[i,j,k] = TH.GetBinError(i+1, j+1, k+1)
+    if not bins:
+        shape = [TH.GetNbinsX(),
+                 TH.GetNbinsY(),
+                 TH.GetNbinsZ()]
+        con = np.ndarray(shape)
+        err = np.ndarray(shape)
+        for i in xrange(shape[0]):
+            for j in xrange(shape[1]):
+                for k in xrange(shape[2]):
+                    con[i,j,k] = TH.GetBinContent(i+1, j+1, k+1)
+                    err[i,j,k] = TH.GetBinError(i+1, j+1, k+1)
+    else:
+        axes = [axis for axis in bins]
+        axes = axes + [[0]]*(3 - len(axes))
+        
+        shape = [len(axis) for axis in bins]
+        shape = shape + [1]*(3 - len(shape))
+
+        con = np.ndarray(shape)
+        err = np.ndarray(shape)
+        for i, xi in enumerate(axes[0]):
+            for j, yj in enumerate(axes[1]):
+                for k, zk in enumerate(axes[2]):
+                    con[i, j, k] = TH.GetBinContent(TH.FindBin(xi, yj, zk))
+                    err[i, j, k] = TH.GetBinError(TH.FindBin(xi, yj, zk))
+
     infile.Close()
     return con.squeeze(), err.squeeze()
 

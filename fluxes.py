@@ -6,8 +6,8 @@ class flux:
     def __init__(self, infileName, branchName):
         self.infileName = infileName
         self.branchName = branchName
-    def load(self):
-        content, stat = root_to_array(self.infileName, self.branchName)
+    def load(self, bins = []):
+        content, stat = root_to_array(self.infileName, self.branchName, bins = bins)
         return content
 
 # Everything from here on depends on the tree structure
@@ -24,22 +24,41 @@ class flux:
 # as they are needed
 
 if 'DP_FLUX_FILE' in os.environ:
-    systFileName = os.environ['DP_FLUX_FILE']
+    nomFileName = os.environ['DP_FLUX_FILE']
 else:
-    systFileName = "../flux/syst/DUNE_Flux_OffAxis_Nov2017Review_syst_shifts_fine.root"
+    nomFileName = "../flux/syst/DUNE_Flux_OffAxis_Nov2017Review_syst_shifts_fine.root"
     print "[WARNING] Environment variable DP_FLUX_FILE is unset! Using default location:"
+    print nomFileName
+
+if 'DP_SYST_FILE' in os.environ:
+    systFileName = os.environ['DP_SYST_FILE']
+else:
+    systFileName = "../flux/syst/FluxErrors_40mOffAxis_Total_BothBeamModes_AllSpecies.root"
+    print "[WARNING] Environment variable DP_SYST_FILE is unset! Using default location:"
     print systFileName
 
-ND_nominal = {mode: {flavor: flux(systFileName, "ND_"+mode+"_ppfx/LBNF_"+flavor+"_flux_Nom")
+ND_nominal = {mode: {flavor: flux(nomFileName, "ND_"+mode+"_ppfx/LBNF_"+flavor+"_flux_Nom")
                      for flavor in ["nue", "numu", "nuebar", "numubar"]}
               for mode in ["nu", "nubar"]}
 
-FD_nominal = {mode: {flavor: flux(systFileName, "FD_"+mode+"_ppfx/LBNF_"+flavor+"_flux_Nom")
+ND_shifts = {mode: {flavor: [flux(systFileName,
+                                  "EffectiveFluxParameters/param_"+str(i)+"/ND_"+mode+"_"+flavor)
+                             for i in range(50)]
+                    for flavor in ["nue", "numu", "nuebar", "numubar"]}
+             for mode in ["nu", "nubar"]}
+
+FD_nominal = {mode: {flavor: flux(nomFileName, "FD_"+mode+"_ppfx/LBNF_"+flavor+"_flux_Nom")
                      for flavor in ["nue", "numu", "nuebar", "numubar"]}
               for mode in ["nu", "nubar"]}
+
+FD_shifts = {mode: {flavor: [flux(systFileName,
+                                  "EffectiveFluxParameters/param_"+str(i)+"/ND_"+mode+"_"+flavor)
+                             for i in range(50)]
+                    for flavor in ["nue", "numu", "nuebar", "numubar"]}
+             for mode in ["nu", "nubar"]}
 
 # The binning within this file is consistent,
 # so get them from any old histogram
 # but this is not always the case!
 
-Ebins, OAbins, zbins = root_to_axes(systFileName, "ND_nu_ppfx/LBNF_numu_flux_Nom")
+Ebins, OAbins, zbins = root_to_axes(nomFileName, "ND_nu_ppfx/LBNF_numu_flux_Nom")
