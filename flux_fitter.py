@@ -94,7 +94,10 @@ class flux_fitter:
 
     def set_maxOA(self, maxOA):
         self.maxOA = maxOA
-        self.ND = self.ND_full.T[OAbins <= maxOA].T
+        self.ND = self.ND_full[:,OAbins <= maxOA]
+        if 'ND_univs' in dir(self):
+            self.ND_univs = self.ND_univs[:, :, OAbins <= maxOA]
+        
 
     def calc_coeffs(self, reg, ND = None, target = None):
         if not ND:

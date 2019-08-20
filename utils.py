@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.stats as st
+import matplotlib.pyplot as plt
 from ROOT import *
 
 def root_to_array(infileName, branchName, bins = []):
@@ -169,3 +170,16 @@ def cut_arrays(ND, FD, FDunosc, Ebins, OAbins, Emax = 4, OAmax = None):
     Ebins = Ebins[Ebins < Emax]
         
     return ND, FD, FDunosc, Ebins, OAbins
+
+
+def plot_with_bands(x, y_coll, ax = plt, *args, **kwargs):
+    """
+    Plot the median and +/- 1 sigma values as a line and band 
+    """
+    quantiles = [0.16, 0.5, 0.84]
+    lastAxis = len(y_coll.shape) - 1
+    lower, med, upper = np.quantile(y_coll, quantiles, axis = lastAxis)
+    
+    band = ax.fill_between(x, lower, upper, alpha = 0.5, *args, **kwargs)
+    line = ax.plot(x, med, *args, **kwargs)
+    return band, line
