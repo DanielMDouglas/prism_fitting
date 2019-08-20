@@ -37,7 +37,11 @@ else:
     print "[WARNING] Environment variable DP_SYST_FILE is unset! Using default location:"
     print systFileName
 
-ND_nominal = {mode: {flavor: flux(nomFileName, "ND_"+mode+"_ppfx/LBNF_"+flavor+"_flux_Nom")
+# Using central value (CV) as nominal for now...
+# ND_nominal = {mode: {flavor: flux(nomFileName, "ND_"+mode+"_ppfx/LBNF_"+flavor+"_flux_Nom")
+#                      for flavor in ["nue", "numu", "nuebar", "numubar"]}
+#               for mode in ["nu", "nubar"]}
+ND_nominal = {mode: {flavor: flux(nomFileName, "ND_"+mode+"_ppfx/LBNF_"+flavor+"_flux_CV")
                      for flavor in ["nue", "numu", "nuebar", "numubar"]}
               for mode in ["nu", "nubar"]}
 
@@ -47,7 +51,10 @@ ND_shifts = {mode: {flavor: [flux(systFileName,
                     for flavor in ["nue", "numu", "nuebar", "numubar"]}
              for mode in ["nu", "nubar"]}
 
-FD_nominal = {mode: {flavor: flux(nomFileName, "FD_"+mode+"_ppfx/LBNF_"+flavor+"_flux_Nom")
+# FD_nominal = {mode: {flavor: flux(nomFileName, "FD_"+mode+"_ppfx/LBNF_"+flavor+"_flux_Nom")
+#                      for flavor in ["nue", "numu", "nuebar", "numubar"]}
+#               for mode in ["nu", "nubar"]}
+FD_nominal = {mode: {flavor: flux(nomFileName, "FD_"+mode+"_ppfx/LBNF_"+flavor+"_flux_CV")
                      for flavor in ["nue", "numu", "nuebar", "numubar"]}
               for mode in ["nu", "nubar"]}
 
