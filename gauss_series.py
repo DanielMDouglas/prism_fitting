@@ -36,7 +36,7 @@ if __name__ == '__main__':
         # only fit inside of the plot window.  Sneaky...
         fitter.set_fit_region([0, 1.5])
         # play with this number!
-        fitter.calc_coeffs(8.e-10)
+        fitter.calc_coeffs(1.e-9)
 
         plt.plot(fine_E_space, fine_target, ls = '--', color = color)
         plot_with_bands(Ebins, np.dot(fitter.ND_univs, fitter.c).T, color = color)

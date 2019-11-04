@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.stats as st
+from scipy.linalg import block_diag
 import matplotlib.pyplot as plt
 from ROOT import *
 
@@ -145,6 +146,17 @@ def resize_hist_2(oldHist, oldBinsX, newBinsX, oldBinsY, newBinsY):
 
     return newHist
 
+
+def rebin(oldHist, rebinF, axis = 0):
+    oldShape = oldHist.shape
+    newShape = oldShape[:axis] + (oldShape[axis]/rebinF, rebinF) + oldShape[axis+1:]
+    newHist = np.sum(oldHist.reshape(newShape), axis = axis + 1)
+    return newHist
+
+
+def average(oldHist, rebinF, axis = 0):
+    return rebin(oldHist, rebinF, axis = axis)/float(rebinF)
+    
 
 def cut_arrays(ND, FD, FDunosc, Ebins, OAbins, Emax = 4, OAmax = None):
     # peak finding
