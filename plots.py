@@ -24,7 +24,7 @@ matplotlib.rc('text', usetex = True)
 matplotlib.rc('axes', prop_cycle = matplotlib.cycler(color = DUNEcolors))
 
 class fit_and_ratio_plot:
-    def __init__(self, fitter, title = None, **kwargs):
+    def __init__(self, fitter = None, title = None, **kwargs):
         
         bandBounds = (0.16, 0.84)
 
@@ -43,8 +43,9 @@ class fit_and_ratio_plot:
                         "loc": "upper right"}
         if title:
             self.legArgs.update({"title": title})
-        
-        self.add(fitter, plotTarget = True, **kwargs)
+            
+        if fitter:
+            self.add(fitter, **kwargs)
 
         self.axUp.set_xlim(0, 10)
         self.axUp.set_xticklabels([])
@@ -62,39 +63,38 @@ class fit_and_ratio_plot:
 
         self.fig.tight_layout()
 
-    def add(self, fitter, label = None, color = None, plotTarget = False):
-        if plotTarget:
-            targetNomLine, = self.axUp.plot(fitter.Ebins,
-                                            fitter.FD_oscillated,
-                                            color = 'black')
-            self.legLineList.append(targetNomLine)
-            self.legLabelList.append(r'Target Flux')
+    def add_target(self, fitter):
+        targetNomLine, = self.axUp.plot(fitter.Ebins,
+                                        fitter.FD_oscillated,
+                                        color = 'black')
+        self.legLineList.append(targetNomLine)
+        self.legLabelList.append(r'Target Flux')
 
-            
-            self.axUp.axvline(x = fitter.Ebounds[0],
-                              ls = '--',
-                              color = 'red')
-            self.axUp.axvline(x = fitter.Ebounds[1],
-                              ls = '--',
-                              color = 'red')
-            self.axUp.arrow(fitter.Ebounds[0], 3.4e-15,
-                            0.15, 0,
-                            width = 2.e-17,
-                            head_length = 0.05,
-                            color = 'red')
-            self.axUp.arrow(fitter.Ebounds[1], 1.5e-15,
-                            -0.15, 0,
-                            width = 2.e-17,
-                            head_length = 0.05,
-                            color = 'red')
+        self.axUp.axvline(x = fitter.Ebounds[0],
+                          ls = '--',
+                          color = 'red')
+        self.axUp.axvline(x = fitter.Ebounds[1],
+                          ls = '--',
+                          color = 'red')
+        self.axUp.arrow(fitter.Ebounds[0], 3.4e-15,
+                        0.15, 0,
+                        width = 2.e-17,
+                        head_length = 0.05,
+                        color = 'red')
+        self.axUp.arrow(fitter.Ebounds[1], 1.5e-15,
+                        -0.15, 0,
+                        width = 2.e-17,
+                        head_length = 0.05,
+                        color = 'red')
         
-            self.axLo.axvline(x = fitter.Ebounds[0],
-                              ls = '--',
-                              color = 'red')
-            self.axLo.axvline(x = fitter.Ebounds[1],
-                              ls = '--',
-                              color = 'red')
-
+        self.axLo.axvline(x = fitter.Ebounds[0],
+                          ls = '--',
+                          color = 'red')
+        self.axLo.axvline(x = fitter.Ebounds[1],
+                          ls = '--',
+                          color = 'red')
+        
+    def add(self, fitter, label = None, color = None):
         NDNomLine, = self.axUp.plot(fitter.Ebins,
                                     np.dot(fitter.ND_full, fitter.c),
                                     color = color)
@@ -120,7 +120,7 @@ class fit_and_ratio_plot:
         self.fig.savefig(fileName)
 
 class coeff_plot:
-    def __init__(self, fitter, title = "Coefficients", HC = True, **kwargs):
+    def __init__(self, fitter = None, title = "Coefficients", HC = True, **kwargs):
         self.fig = plt.figure()
 
         self.HC = HC
@@ -135,7 +135,8 @@ class coeff_plot:
         else:
             self.OAax = self.fig.gca()
 
-        self.add(fitter, **kwargs)
+        if fitter:
+            self.add(fitter, **kwargs)
             
         ylim = 2.5e-7
 

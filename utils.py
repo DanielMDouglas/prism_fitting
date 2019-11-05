@@ -20,6 +20,7 @@ def root_to_array(infileName, branchName, bins = []):
                     err[i,j,k] = TH.GetBinError(i+1, j+1, k+1)
     else:
         axes = [axis for axis in bins]
+        # force the hist to be 3 dimensional (reduce later)
         axes = axes + [[0]]*(3 - len(axes))
         
         shape = [len(axis) for axis in bins]
