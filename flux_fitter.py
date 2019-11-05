@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 
 class flux_fitter:
-    def __init__(self, beamMode, FDfromFlavor, FDtoFlavor, NDflavor, oscParam = None, ErebinF = 1):
+    def __init__(self, beamMode, FDfromFlavor, FDtoFlavor, NDflavor, oscParam = None, ErebinF = 1, useHC = True):
         self.beamMode = beamMode
         self.FDfromFlavor = FDfromFlavor
         self.FDtoFlavor = FDtoFlavor
@@ -15,20 +15,31 @@ class flux_fitter:
 
         self.FD_unoscillated = FD_nominal[beamMode][FDfromFlavor].load()
         self.ND_OA = ND_nominal[beamMode][NDflavor].load()
-        self.ND_HC = np.array([ND_HC_shifts[beamMode][NDflavor][current].load()
-                               for current in currents]).T
+        if useHC:
+            self.ND_HC = np.array([ND_HC_shifts[beamMode][NDflavor][current].load()
+                                   for current in currents]).T
+        else:
+            print self.ND_OA.shape
+            self.ND_HC = np.ndarray((self.ND_OA.shape[0], 0))
+            print self.ND_HC.shape
         self.ND_full = np.concatenate((self.ND_OA, self.ND_HC), axis = 1)
         self.ND = self.ND_full
 
         self.Ebins = Ebins
         self.OAbins = OAbins
-        self.HCbins = currents
-
+        if useHC:
+            self.HCbins = currents
+        else:
+            self.HCbins = []
+            
         self.Ebounds = (0, np.max(self.Ebins))
         self.OutOfRegionFactors = (0, 0)
         self.maxOA = np.max(self.OAbins)
-        self.maxHC = np.max(currents)
-        
+        if useHC:
+            self.maxHC = np.max(currents)
+        else:
+            self.maxHC = 293.
+            
         if not oscParam:
             self.Posc = oscProb(FDfromFlavor, FDtoFlavor).load(self.Ebins)
         else:

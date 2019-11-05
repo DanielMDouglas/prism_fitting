@@ -108,11 +108,12 @@ class fit_and_ratio_plot:
         self.axLo.plot(fitter.Ebins,
                        (np.dot(fitter.ND_full, fitter.c) - fitter.FD_oscillated)/fitter.FD_unoscillated,
                        color = color)
-
-    def show(self):
+        
         self.axUp.legend(self.legLineList,
                          self.legLabelList,
                          **self.legArgs)
+
+    def show(self):
         self.fig.show()
 
     def save(self, fileName):
@@ -143,10 +144,11 @@ class coeff_plot:
         self.OAax.set_xlabel(r'$D_{OA}$ [m]')
         self.OAax.set_ylabel(r'$c_i$')
 
-        self.HCax.set_ylim(-ylim, ylim)
-        self.HCax.grid(True)
-        self.HCax.set_xlabel(r'Horn Current [kA]')
-        self.HCax.set_yticklabels([])
+        if self.HC:
+            self.HCax.set_ylim(-ylim, ylim)
+            self.HCax.grid(True)
+            self.HCax.set_xlabel(r'Horn Current [kA]')
+            self.HCax.set_yticklabels([])
 
         self.fig.suptitle(title)
         self.fig.tight_layout()
@@ -169,9 +171,10 @@ class coeff_plot:
                                   marker = "+",
                                   s = 500,
                                   label = label)
+        if label:
+            self.OAax.legend()
 
     def show(self):
-        self.OAax.legend()
         self.fig.show()
         
     def save(self, fileName):

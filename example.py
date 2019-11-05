@@ -1,4 +1,5 @@
 from flux_fitter import *
+from plots import *
 
 if __name__ == '__main__':
 
@@ -6,7 +7,7 @@ if __name__ == '__main__':
     # use FHC
     # use numu -> numu at FD
     # use numu at ND
-    fitter = flux_fitter("nu", "numu", "numu", "numu")
+    fitter = flux_fitter("nu", "numu", "numu", "numu", useHC = False)
 
     # use the following oscillation parameters
     dcp = -np.pi/2
@@ -25,15 +26,15 @@ if __name__ == '__main__':
     # with a 5% effect on the low-E side and no weight on the high-E side
     fitter.set_OOR([0.05, 0])
     # find the coefficients with a regularization factor of 8.e-9
-    fitter.calc_coeffs(8.e-9, 1.e10)
+    fitter.calc_coeffs(8.e-9, 8.e-9)
 
     # a nicely formatted title 
     title = r'$\sin^2 \theta_{23} = $'+str(s23)+r'$, \Delta m^2_{32} = $'+dm32Pretty
     # plot the fit and the (fit - target)/target_unosc
-    fitter.plot_FD_flux()
-    fitter.plot_ND_flux_sliced()
-    fitter.plot_target_fit_and_ratio(title = title, show = True)
-    # plot the coefficients
-    fitter.plot_coeffs(title = r'Coefficients', show = True)
-    
+    FD_flux_plot(fitter)
+    ND_flux_slice_plot(fitter)
+    fit_and_ratio_plot(fitter, title = title)
+    coeff_plot(fitter, HC = False)
+
+    plt.show()    
     
