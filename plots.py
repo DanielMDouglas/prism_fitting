@@ -24,7 +24,7 @@ matplotlib.rc('text', usetex = True)
 matplotlib.rc('axes', prop_cycle = matplotlib.cycler(color = DUNEcolors))
 
 class fit_and_ratio_plot:
-    def __init__(self, fitter = None, title = None, **kwargs):
+    def __init__(self, fitter = None, useTarget = True, title = None, **kwargs):
         
         bandBounds = (0.16, 0.84)
 
@@ -45,8 +45,10 @@ class fit_and_ratio_plot:
             self.legArgs.update({"title": title})
             
         if fitter:
+            if useTarget:
+                self.add_target(fitter)
             self.add(fitter, **kwargs)
-
+            
         self.axUp.set_xlim(0, 10)
         self.axUp.set_xticklabels([])
         self.axUp.grid(True, which = 'both')
@@ -93,6 +95,10 @@ class fit_and_ratio_plot:
         self.axLo.axvline(x = fitter.Ebounds[1],
                           ls = '--',
                           color = 'red')
+
+        self.axUp.legend(self.legLineList,
+                         self.legLabelList,
+                         **self.legArgs)
         
     def add(self, fitter, label = None, color = None):
         NDNomLine, = self.axUp.plot(fitter.Ebins,
