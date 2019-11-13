@@ -128,9 +128,13 @@ class flux_fitter:
     def load_ND_HC_ppfx_systs(self, nUniv = 100):
         ND_HC_CV = np.array([ND_HC_ppfx_CV[self.beamMode][self.FDfromFlavor][current].load()
                              for current in self.HCbins]).T
-        ND_HC = np.array([[ND_HC_ppfx_shifts[self.beamMode][self.FDfromFlavor][current][univ].load()
-                           for univ in range(nUniv)]
-                          for current in self.HCbins]).reshape(nUniv, self.initNEbins, len(self.HCbins))
+        print ND_HC_CV.shape
+        if np.any(self.HCbins):
+            ND_HC = np.array([np.array([ND_HC_ppfx_shifts[self.beamMode][self.FDfromFlavor][current][univ].load()
+                                        for univ in range(nUniv)]).T
+                              for current in self.HCbins]).T
+        else:
+            ND_HC = np.ndarray((nUniv, self.initNEbins, len(self.HCbins)))
 
         ND_HC /= ND_HC_CV
         ND_HC = average(ND_HC, self.rebinF, axis = 1)
@@ -213,7 +217,7 @@ class flux_fitter:
         # self.ND_HC = average(self.ND_HC, rebinF)
         # self.ND_full = np.concatenate((self.ND_OA, self.ND_HC.T), axis = 1)
 
-        if 'ND_ppfx_univs' in dir(self):
+        if self.ppfx_systs_loaded:
             self.load_ND_HC_ppfx_systs()
 
     def use_currents(self, theseCurrents):
@@ -229,7 +233,7 @@ class flux_fitter:
         self.ND_full = np.concatenate((self.ND_OA, self.ND_HC), axis = 1)
         self.ND = self.ND_full
 
-        if 'ND_ppfx_univs' in dir(self):
+        if self.ppfx_systs_loaded:
             self.load_ND_HC_ppfx_systs()
 
     def calc_coeffs(self, OAreg, HCreg, ND = [None], target = [None], fluxTimesE = False):
@@ -250,7 +254,9 @@ class flux_fitter:
         # OA penalty term is the L1 norm
         OA_penalty = np.eye(nBinsOA)
         HC_penalty = np.eye(nBinsHC)
+        self.A = block_diag(OA_penalty, HC_penalty)
         Gamma = block_diag(OAreg*OA_penalty, HCreg*HC_penalty)
+        self.Gamma = Gamma
 
         # weighting matrix for target flux
         P = np.diag(np.where(self.Ebins > self.Ebounds[1],
@@ -258,6 +264,7 @@ class flux_fitter:
                              np.where(self.Ebins < self.Ebounds[0],
                                       self.OutOfRegionFactors[0],
                                       1)))
+        self.P = P
 
         # ND matrix
         NDmatr = np.matrix(ND)
@@ -268,6 +275,50 @@ class flux_fitter:
         self.cOA = self.c[:nBinsOA]
         self.cHC = self.c[nBinsOA:]
 
+    def calc_var_coeff_correction(self, reg, fluxTimesE = False):
+        """
+        Calculate a correction to the nominal coefficients to minimize the variance of the residual
+        over different systematic universes
+        """
+        ND = np.concatenate((self.ND_full,) + tuple(ND for ND in self.ND_ppfx_univs))
+        target = np.concatenate((self.target,) + tuple(FD*self.Posc for FD in self.FD_unosc_ppfx_univs))
+        target -= np.dot(ND, self.c)
+        # if fluxTimesE:
+        #     ND = ND*self.Ebins.reshape(ND.shape[0], 1)
+        #     target = target*self.Ebins
+        
+        # penalty matrix for coefficients
+        nBinsOA = np.sum(self.OAbins <= self.maxOA)
+        nBinsHC = self.ND_HC.shape[1]
+        
+        # # OA penalty term is a difference matrix
+        # OA_penalty = np.diag(nBinsOA*[1]) - np.diag((nBinsOA - 1)*[1], k = 1)
+        # OA penalty term is the L1 norm
+        OA_penalty = np.eye(nBinsOA)
+        HC_penalty = np.eye(nBinsHC)
+        OAreg = reg
+        HCreg = reg
+        Gamma = block_diag(OAreg*OA_penalty, HCreg*HC_penalty)
+    
+        # weighting matrix for target flux
+        P = np.diag(np.where(self.Ebins > self.Ebounds[1],
+                             self.OutOfRegionFactors[1],
+                             np.where(self.Ebins < self.Ebounds[0],
+                                      self.OutOfRegionFactors[0],
+                                      1)))
+        P = block_diag(*(101*(P,)))
+        
+        # ND matrix
+        NDmatr = np.matrix(ND)
+        LHS = np.matmul(NDmatr.T, np.matmul(P, NDmatr)) + np.matmul(Gamma.T, Gamma)
+        RHS = np.dot(np.matmul(NDmatr.T, P), target)
+
+        deltac = np.array(np.dot(RHS, LHS.I)).squeeze()
+        # self.c = np.linalg.solve(LHS, RHS)
+        self.c += deltac
+        self.cOA = self.c[:nBinsOA]
+        self.cHC = self.c[nBinsOA:]
+        
     def compressed_sensing(self, diag = [None], reg = 1.e-9, ND = None, target = None):
         if not ND:
             ND = self.ND
@@ -296,6 +347,13 @@ class flux_fitter:
         RHS = np.dot(np.matmul(NDmatr.T, P), target)
 
         self.c = np.array(np.dot(RHS, LHS.I)).squeeze()
-        
+
+    def residual_norm(self):
+        return np.sqrt(np.sum(np.power(np.matmul(self.P,
+                                                 np.dot(self.ND_full,
+                                                        self.c) - self.target),
+                                       2)))
+    def solution_norm(self):
+        return np.sqrt(np.sum(np.power(np.dot(self.A, self.c), 2)))
     def set_coeffs(self, other):
         self.coeffs = other.coeff

@@ -196,3 +196,13 @@ def plot_with_bands(x, y_coll, ax = plt, *args, **kwargs):
     band = ax.fill_between(x, lower, upper, alpha = 0.5, *args, **kwargs)
     line = ax.plot(x, med, *args, **kwargs)
     return band, line
+
+
+def float_to_sci(thisFloat, digits = 2):
+    raw_float_string = str(thisFloat)
+    if 'e' in raw_float_string:
+        roundFactor = -int(raw_float_string.split('e')[-1]) + digits
+        float_string = str(round(thisFloat, roundFactor)).replace('+', '')
+        return r'$'+float_string.replace('e', r'\times 10^{')+'}$'
+    else:
+        return r'$'+raw_float_string+r'$'

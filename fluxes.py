@@ -44,8 +44,11 @@ else:
 HCFileName = nomFileName
 
 flavors = ["nue", "numu", "nuebar", "numubar"]
-modes = ["nu", "nubar"]
-currentNames = ["295.5",
+# modes = ["nu", "nubar"]
+modes = ["nu"]
+currentNames = ["200",
+                "250",
+                "295.5",
                 "298",
                 "300.5",
                 "303",
@@ -55,8 +58,7 @@ currentNames = ["295.5",
                 "313",
                 "323",
                 "333",
-                "343",
-                ]
+                "343"]
 currents = np.array([float(i) for i in currentNames])
 systKeys = ["HC_p1",
             "HC_m1",
