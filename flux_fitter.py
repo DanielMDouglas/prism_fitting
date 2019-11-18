@@ -153,14 +153,42 @@ class flux_fitter:
 
         self.ppfx_systs_loaded = True
 
-    def load_other_systs(self):
-        FD = {key: shift.load() for key, shift
+    def load_FD_other_systs(self):
+        FD = {key: average(shift.load(), self.rebinF) for key, shift
               in FD_other_shifts[self.beamMode][self.FDfromFlavor].items()}
+
+        self.FD_unosc_other_univs = FD
+
+    def load_ND_OA_other_systs(self):
+        ND_OA = {key: average(shift.load(), self.rebinF) for key, shift
+                 in ND_other_shifts[self.beamMode][self.FDfromFlavor].items()}
+
+        self.ND_OA_other_univs = ND_OA
+        if "ND_HC_other_univs" in dir(self):
+            self.ND_other_univs = np.concatenate((self.ND_OA_other_univs,
+                                                  self.ND_HC_other_univs),
+                                                 axis = 2)
+
+    def load_ND_HC_other_systs(self):
         ND = {key: shift.load() for key, shift
               in ND_other_shifts[self.beamMode][self.FDfromFlavor].items()}
 
+        self.ND_HC_other_univs = ND_OA
+        if "ND_OA_other_univs" in dir(self):
+            self.ND_other_univs = np.concatenate((self.ND_OA_other_univs,
+                                                  self.ND_HC_other_univs),
+                                                 axis = 2)
+        
+    def load_other_systs(self):
+        
         self.FD_unosc_other_univs = FD
         self.ND_other_univs = ND
+
+        self.load_FD_other_systs()
+        self.load_ND_OA_other_systs()
+        self.load_ND_HC_other_systs()
+
+        self.other_systs_loaded = True
         
     def set_fit_region(self, energies = None, peaks = None):
         if energies:
@@ -175,10 +203,10 @@ class flux_fitter:
             else:
                 # this should be an odd integer
                 # otherwise I have to think harder about how to do this...
-                window_size = 5
+                window_size = 3
                 fringe_size = window_size/2
                 smoothed = np.convolve(self.target,
-                                       (1/float(window_size))*np.ones(window_size))[fringe_size:-fringe_size]
+                                       (1/float(window_size))*np.ones(window_size))[:-window_size+1]
                 threshold = 0.05*np.max(smoothed)
                 foundPeaks = self.Ebins[(np.diff(smoothed, n = 1, prepend = 0) > 0) &
                                         (np.diff(smoothed, n = 1, append = 0) < 0) &

@@ -20,6 +20,13 @@ DUNEcolors = [DUNEblue,
               DUNEyellow,
               DUNEgray]
 
+LaTeXflavor = {"numu": r'$\nu_\mu$',
+               "numubar": r'$\bar{\nu}_\mu$',
+               "nue": r'$\nu_e$',
+               "nuebar": r'$\bar{\nu}_e$',
+               "nutau": r'$\nu_\tau$',
+               "nutaubar": r'$\bar{\nu}_\tau$'}
+
 matplotlib.rc('font', family = 'FreeSerif', size = 16, weight = 'bold')
 matplotlib.rc('text', usetex = True)
 matplotlib.rc('axes', prop_cycle = matplotlib.cycler(color = DUNEcolors))
@@ -67,19 +74,19 @@ class fit_and_ratio_plot (plot):
 
         self.axLo.grid(True)
         self.axLo.set_xlim(0, 10)
-        self.axLo.set_ylim(-0.24, 0.24)
+        self.axLo.set_ylim(-0.6, 0.6)
         self.axLo.set_xlabel(r'$E_\nu$ [GeV]')
         if "ylabel" in kwargs:
             self.axLo.set_ylabel(kwargs["ylabel"], labelpad = 5)
         else:
-            self.axLo.set_ylabel(r'$\frac{ND - FD (osc.)}{FD (unosc.)}$', labelpad = 5)
-        self.axLo.set_yticks([-0.2, -0.1, 0, 0.1, 0.2])
-        self.axLo.set_yticklabels(["-20\%", "-10\%", "0\%", "10\%", "20\%"])
+            self.axLo.set_ylabel(r'$\frac{ND - FD (osc.)}{FD (osc.)}$', labelpad = 5)
+        self.axLo.set_yticks([-0.5, -0.25, 0, 0.25, 0.5])
+        self.axLo.set_yticklabels(["-50\%", "-25\%", "0\%", "25\%", "50\%"])
         self.axLo.grid(True, which = 'both')
 
         self.fig.tight_layout()
 
-    def add_target(self, fitter, full_flux = True, Ebounds = True):
+    def add_target(self, fitter, label = None, full_flux = True, Ebounds = True):
         self.full_flux = full_flux
         if full_flux:
             self.target = fitter.FD_oscillated
@@ -89,7 +96,12 @@ class fit_and_ratio_plot (plot):
                                         self.target,
                                         color = 'black')
         self.legLineList.append(targetNomLine)
-        self.legLabelList.append(r'Target Flux')
+        if not label:
+            label = ''.join([r'FD ',
+                             LaTeXflavor[fitter.FDfromFlavor],
+                             r' $\rightarrow$ ',
+                             LaTeXflavor[fitter.FDtoFlavor]])
+        self.legLabelList.append(label)
 
         if Ebounds:
             self.axUp.axvline(x = fitter.Ebounds[0],
@@ -136,7 +148,7 @@ class fit_and_ratio_plot (plot):
 
         if self.full_flux:
             target = fitter.FD_oscillated
-            denom = fitter.FD_unoscillated
+            denom = fitter.FD_oscillated
         else:
             target = self.target
             denom = self.target
@@ -280,9 +292,13 @@ class ND_flux_slice_plot (plot):
         self.fig.tight_layout()
 
 class FD_flux_plot (plot):
-    def __init__(self, fitter, color = None):
-        self.fig = plt.figure()
+    def __init__(self, fitter, title = None, color = None, aspect = None, figSize = (6.4, 4.8)):
+        self.fig = plt.figure(figsize = figSize)
         self.ax = self.fig.gca()
+
+        self.legLabelList = [r'FD ' + LaTeXflavor[fitter.FDfromFlavor]
+                             + r' $\rightarrow$ ' + LaTeXflavor[fitter.FDtoFlavor]]
+        
         if "FD_unosc_univs" in dir(fitter):
             oscillated = fitter.FD_unosc_univs*self.Posc
             lower, upper = np.quantile(oscillated, [0.16, 0.84], axis = 0)
@@ -292,32 +308,52 @@ class FD_flux_plot (plot):
                                  alpha = 0.5,
                                  color = color)
             
-        self.ax.plot(fitter.Ebins,
-                     fitter.FD_oscillated,
-                     color = '#ff7f0e')
+        line, = self.ax.plot(fitter.Ebins,
+                             fitter.FD_oscillated,
+                             color = color)
+
+        self.legLineList = [line]
 
         self.ax.set_xlabel(r'$E_\nu$ [GeV]')
         self.ax.set_ylabel(r'$\Phi$ [cm$^{-2}$ per POT per GeV]')
 
-        self.ax.grid()
+        self.ax.set_title(title)
+
+        self.ax.legend(self.legLineList,
+                       self.legLabelList,
+                       frameon = False)
+        
+        # self.ax.grid()
+        self.ax.set_xlim(0, 10)
+        self.ax.set_ylim(0, 1.2*np.max(fitter.FD_oscillated))
         self.ax.set_title("FD Oscillated Flux")
         self.fig.tight_layout()
 
+    def add_fit(self, fitter, color = None):
+        fitLine, = self.ax.plot(fitter.Ebins,
+                                np.dot(fitter.ND_full, fitter.c),
+                                color = color)
+        self.legLineList.append(fitLine)
+        self.legLabelList.append(r'ND Flux Match')
+        
+        self.ax.legend(self.legLineList,
+                       self.legLabelList,
+                       frameon = False)
+
+
 class FD_flux_osc_and_unosc_plot (plot):
-    def __init__(self, fitter, title = "FD Flux", inset_text = None, logScale = False):
-        self.fig = plt.figure()
+    def __init__(self, fitter, title = "FD Flux", inset_text = None, logScale = False, figSize = (6.4, 4.8)):
+        self.fig = plt.figure(figsize = figSize)
         self.ax = plt.gca()
 
         self.legLabelList = [r'Oscillated',
                              r'Unoscillated']
 
         oscLine, = self.ax.plot(fitter.Ebins,
-                                fitter.FD_oscillated,
-                                color = DUNEblue)
+                                fitter.FD_oscillated)
 
         unoscLine, = self.ax.plot(fitter.Ebins,
-                                  fitter.FD_unoscillated,
-                                  color = DUNElightOrange)
+                                  fitter.FD_unoscillated)
         
         if "FD_unosc_univs" in dir(fitter):
             oscillated = fitter.FD_unosc_univs*fitter.Posc
@@ -349,7 +385,6 @@ class FD_flux_osc_and_unosc_plot (plot):
         self.ax.set_xlabel(r'$E_\nu$ [GeV]')
         self.ax.set_ylabel(r'$\Phi$ [cm$^{-2}$ per POT per GeV]')
 
-        print self.legLineList, self.legLabelList
         self.ax.legend(self.legLineList,
                        self.legLabelList,
                        frameon = False)
@@ -382,6 +417,17 @@ class FD_flux_osc_and_unosc_plot (plot):
                               inset_text)
         self.fig.tight_layout()
 
+    def add_fit(self, fitter, color = None):
+        fitLine, = self.ax.plot(fitter.Ebins,
+                                np.dot(fitter.ND_full, fitter.c),
+                                color = color)
+        self.legLineList.append(fitLine)
+        self.legLabelList.append(r'ND Flux Match')
+        
+        self.ax.legend(self.legLineList,
+                       self.legLabelList,
+                       frameon = False)
+        
 class mike_plot (plot):
     def __init__(self, fitter = None, varType = "ppfx", varKey = 0, label = r'ND \& FD', title = None):
         self.fig = plt.figure()
