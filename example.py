@@ -26,7 +26,10 @@ if __name__ == '__main__':
     # with a 5% effect on the low-E side and no weight on the high-E side
     fitter.set_OOR([0.05, 0])
     # find the coefficients with a regularization factor of 8.e-9
-    fitter.calc_coeffs(8.e-9, 8.e-9)
+    reg = 1.e6
+    fitter.calc_coeffs(reg, reg,
+                       ND = fitter.ND_full/fitter.FD_unoscillated.reshape(-1, 1),
+                       target = fitter.target/fitter.FD_unoscillated)
 
     # a nicely formatted title 
     title = r'$\sin^2 \theta_{23} = $'+str(s23)+r'$, \Delta m^2_{32} = $'+dm32Pretty
@@ -35,6 +38,22 @@ if __name__ == '__main__':
     ND_flux_slice_plot(fitter)
     fit_and_ratio_plot(fitter, title = title)
     coeff_plot(fitter, HC = False)
+
+    print fitter.residual_norm(ND = fitter.ND_full/fitter.FD_unoscillated.reshape(-1, 1),
+                               target = fitter.target/fitter.FD_unoscillated)
+    print fitter.solution_norm(ND = fitter.ND_full/fitter.FD_unoscillated.reshape(-1, 1),
+                               target = fitter.target/fitter.FD_unoscillated)
+
+    opt_l = L_curve_curvature_plot(fitter,
+                                   regRange = np.logspace(4.5, 6, 500),
+                                   ND = fitter.ND_full/fitter.FD_unoscillated.reshape(-1, 1),
+                                   target = fitter.target/fitter.FD_unoscillated).opt_l
+
+    L_curve_plot(fitter,
+                 regRange = np.logspace(4.5, 6, 500),
+                 ND = fitter.ND_full/fitter.FD_unoscillated.reshape(-1, 1),
+                 target = fitter.target/fitter.FD_unoscillated,
+                 highlight = [opt_l])
 
     plt.show()    
     

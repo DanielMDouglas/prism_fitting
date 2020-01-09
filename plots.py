@@ -74,13 +74,16 @@ class fit_and_ratio_plot (plot):
 
         self.axLo.grid(True)
         self.axLo.set_xlim(0, 10)
-        self.axLo.set_ylim(-0.6, 0.6)
         self.axLo.set_xlabel(r'$E_\nu$ [GeV]')
         if "ylabel" in kwargs:
             self.axLo.set_ylabel(kwargs["ylabel"], labelpad = 5)
         else:
-            self.axLo.set_ylabel(r'$\frac{ND - FD (osc.)}{FD (osc.)}$', labelpad = 5)
-        self.axLo.set_yticks([-0.5, -0.25, 0, 0.25, 0.5])
+            self.axLo.set_ylabel(r'$\frac{ND - FD (osc.)}{FD (unosc.)}$', labelpad = 5)
+        # self.axLo.set_ylim(-0.6, 0.6)
+        # self.axLo.set_yticks([-0.5, -0.25, 0, 0.25, 0.5])
+        # self.axLo.set_yticklabels(["-50\%", "-25\%", "0\%", "25\%", "50\%"])
+        self.axLo.set_ylim(-0.12, 0.12)
+        self.axLo.set_yticks([-0.5, -0.25, 0, 0.25, 0.50])
         self.axLo.set_yticklabels(["-50\%", "-25\%", "0\%", "25\%", "50\%"])
         self.axLo.grid(True, which = 'both')
 
@@ -148,7 +151,8 @@ class fit_and_ratio_plot (plot):
 
         if self.full_flux:
             target = fitter.FD_oscillated
-            denom = fitter.FD_oscillated
+            # denom = fitter.FD_oscillated
+            denom = fitter.FD_unoscillated
         else:
             target = self.target
             denom = self.target
@@ -281,7 +285,6 @@ class ND_flux_slice_plot (plot):
                            labels,
                            frameon = False)
         else:
-            print meanLines, labels
             self.ax.legend(meanLines,
                            labels,
                            frameon = False)
@@ -339,7 +342,6 @@ class FD_flux_plot (plot):
         self.ax.legend(self.legLineList,
                        self.legLabelList,
                        frameon = False)
-
 
 class FD_flux_osc_and_unosc_plot (plot):
     def __init__(self, fitter, title = "FD Flux", inset_text = None, logScale = False, figSize = (6.4, 4.8)):
@@ -539,8 +541,6 @@ class mike_summary_plot (plot):
             else:
                 self.subPlots.append(thisMikePlot)
                 
-        print np.array(diffs).shape
-
         self.ax.fill_between(fitter.Ebins,
                              *np.quantile(diffs, (0.16, 0.84), axis = 0),
                              alpha = 0.5)
@@ -579,6 +579,15 @@ class L_curve_plot (plot):
         self.fig.tight_layout()
         
     def add(self, fitter, regRange = np.logspace(-11, -8, 1000), highlight = [], **kwargs):
+        if "ND" in kwargs:
+            ND = kwargs["ND"]
+        else:
+            ND = [None]
+        if "target" in kwargs:
+            target = kwargs["target"]
+        else:
+            target = [None]
+
         res = []
         sol = []
         for reg in regRange:
@@ -587,9 +596,9 @@ class L_curve_plot (plot):
             else:
                 HCreg = kwargs["HCreg"]
 
-            fitter.calc_coeffs(reg, HCreg)
-            res.append(fitter.residual_norm())
-            sol.append(fitter.solution_norm())
+            fitter.calc_coeffs(reg, HCreg, ND = ND, target = target)
+            res.append(fitter.residual_norm(**kwargs))
+            sol.append(fitter.solution_norm(**kwargs))
 
         line, = self.ax.plot(res, sol)
 
@@ -603,9 +612,9 @@ class L_curve_plot (plot):
             else:
                 HCreg = kwargs["HCreg"]
 
-            fitter.calc_coeffs(reg, HCreg)
-            point = self.ax.scatter(fitter.residual_norm(),
-                                    fitter.solution_norm())
+            fitter.calc_coeffs(reg, HCreg, ND = ND, target = target)
+            point = self.ax.scatter(fitter.residual_norm(**kwargs),
+                                    fitter.solution_norm(**kwargs))
 
             self.legLabelList.append(r'$\lambda_{OA} = $'+float_to_sci(reg))
             self.legLineList.append(point)
@@ -633,6 +642,15 @@ class L_curve_curvature_plot (plot):
         self.fig.tight_layout()
         
     def add(self, fitter, regRange = np.logspace(-11, -8, 1000), highlight = [], **kwargs):
+        if "ND" in kwargs:
+            ND = kwargs["ND"]
+        else:
+            ND = [None]
+        if "target" in kwargs:
+            target = kwargs["target"]
+        else:
+            target = [None]
+
         res = []
         sol = []
         for reg in regRange:
@@ -641,9 +659,9 @@ class L_curve_curvature_plot (plot):
             else:
                 HCreg = kwargs["HCreg"]
 
-            fitter.calc_coeffs(reg, HCreg)
-            res.append(fitter.residual_norm())
-            sol.append(fitter.solution_norm())
+            fitter.calc_coeffs(reg, HCreg, ND = ND, target = target)
+            res.append(fitter.residual_norm(**kwargs))
+            sol.append(fitter.solution_norm(**kwargs))
 
         res = np.array(res)
         sol = np.array(sol)
@@ -669,4 +687,5 @@ class L_curve_curvature_plot (plot):
                            frameon = False)
 
         maxCurv = np.max(curv[~np.isnan(curv)])
-        return regRange[1:-1][curv == maxCurv]
+        self.opt_l = regRange[1:-1][curv == maxCurv]
+        return self.opt_l

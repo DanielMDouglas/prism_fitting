@@ -28,7 +28,8 @@ if 'DP_FLUX_FILE' in os.environ:
 else:
     # nomFileName = "../flux/syst/DUNE_Flux_OffAxis_Nov2017Review_syst_shifts_fine.root"
     # nomFileName = "../flux/DUNE_Flux_OffAxis_Nov2017Review_syst_shifts_finebin.root"
-    nomFileName = "../flux/DUNE_Flux_OffAxis_Nov2017Review_syst_shifts_finebin_HHCOnAxis.root"
+    # nomFileName = "../flux/DUNE_Flux_OffAxis_Nov2017Review_syst_shifts_finebin_HHCOnAxis.root"
+    nomFileName = "../flux/All_HC.root"
     print "[WARNING] Environment variable DP_FLUX_FILE is unset! Using default location:"
     print nomFileName
 
@@ -48,6 +49,7 @@ flavors = ["nue", "numu", "nuebar", "numubar"]
 modes = ["nu"]
 currentNames = ["200",
                 "250",
+                "280",
                 "295.5",
                 "298",
                 "300.5",

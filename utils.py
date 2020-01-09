@@ -157,7 +157,7 @@ def rebin(oldHist, rebinF, axis = 0):
 
 def average(oldHist, rebinF, axis = 0):
     return rebin(oldHist, rebinF, axis = axis)/float(rebinF)
-    
+
 
 def cut_arrays(ND, FD, FDunosc, Ebins, OAbins, Emax = 4, OAmax = None):
     # peak finding

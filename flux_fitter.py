@@ -53,12 +53,15 @@ class flux_fitter:
         self.Posc = average(self.Posc, rebinF)
         self.target = average(self.target, rebinF)
         self.Ebins = average(self.Ebins, rebinF)
+        
     def rebin_ppfx_systs(self, rebinF):
         self.FD_unosc_ppfx_univs = average(self.FD_unosc_ppfx_univs, rebinF)
         self.ND_OA_unosc_ppfx_univs = average(self.ND_OA_unosc_ppfx_univs, rebinF)
         self.ND_HC_unosc_ppfx_univs = average(self.ND_HC_unosc_ppfx_univs, rebinF)
+        
     def rebin_other_systs(self, rebinF):
         pass
+    
     def rebin(self, rebinF):
         self.rebinF = rebinF
         
@@ -99,6 +102,7 @@ class flux_fitter:
         self.load_FD_nom()
         self.load_ND_OA_nom()
         self.load_ND_HC_nom()
+        
     def load_FD_ppfx_systs(self, nUniv = 100):
         FD_CV = FD_ppfx_CV[self.beamMode][self.FDfromFlavor].load()
         FD = np.array([shift.load() for shift
@@ -203,7 +207,7 @@ class flux_fitter:
             else:
                 # this should be an odd integer
                 # otherwise I have to think harder about how to do this...
-                window_size = 3
+                window_size = 7
                 fringe_size = window_size/2
                 smoothed = np.convolve(self.target,
                                        (1/float(window_size))*np.ones(window_size))[:-window_size+1]
@@ -376,12 +380,27 @@ class flux_fitter:
 
         self.c = np.array(np.dot(RHS, LHS.I)).squeeze()
 
-    def residual_norm(self):
-        return np.sqrt(np.sum(np.power(np.matmul(self.P,
-                                                 np.dot(self.ND_full,
-                                                        self.c) - self.target),
-                                       2)))
-    def solution_norm(self):
+    def residual_norm(self, P = None, ND = None, target = None, **kwargs):
+        if not np.any(P):
+            P = self.P
+        if not np.any(ND):
+            ND = self.ND_full
+        if not np.any(target):
+            target = self.target
+
+        return np.sqrt(np.sum(np.power(np.matmul(P, np.dot(ND, self.c) - target), 2)))
+    
+    def solution_norm(self, A = None, **kwargs):
+        if not np.any(A):
+            A = self.A
         return np.sqrt(np.sum(np.power(np.dot(self.A, self.c), 2)))
+
+    def variance_norm(self):
+        if self.ppfx_systs_loaded:
+            return np.sqrt(np.sum(np.sum(np.power(np.matmul(self.P,
+                                                            np.dot(self.ND_ppfx_univs,
+                                                                   self.c) - self.target),
+                                                  2))))
+
     def set_coeffs(self, other):
         self.coeffs = other.coeff
