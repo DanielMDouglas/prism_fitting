@@ -39,10 +39,10 @@ if __name__ == '__main__':
     fit_and_ratio_plot(fitter, title = title)
     coeff_plot(fitter, HC = False)
 
-    print fitter.residual_norm(ND = fitter.ND_full/fitter.FD_unoscillated.reshape(-1, 1),
-                               target = fitter.target/fitter.FD_unoscillated)
-    print fitter.solution_norm(ND = fitter.ND_full/fitter.FD_unoscillated.reshape(-1, 1),
-                               target = fitter.target/fitter.FD_unoscillated)
+    print "residual norm: ", fitter.residual_norm(ND = fitter.ND_full/fitter.FD_unoscillated.reshape(-1, 1),
+                                                  target = fitter.target/fitter.FD_unoscillated)
+    print "solution norm: ", fitter.solution_norm(ND = fitter.ND_full/fitter.FD_unoscillated.reshape(-1, 1),
+                                                  target = fitter.target/fitter.FD_unoscillated)
 
     opt_l = L_curve_curvature_plot(fitter,
                                    regRange = np.logspace(4.5, 6, 500),

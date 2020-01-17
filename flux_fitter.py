@@ -132,7 +132,6 @@ class flux_fitter:
     def load_ND_HC_ppfx_systs(self, nUniv = 100):
         ND_HC_CV = np.array([ND_HC_ppfx_CV[self.beamMode][self.FDfromFlavor][current].load()
                              for current in self.HCbins]).T
-        print ND_HC_CV.shape
         if np.any(self.HCbins):
             ND_HC = np.array([np.array([ND_HC_ppfx_shifts[self.beamMode][self.FDfromFlavor][current][univ].load()
                                         for univ in range(nUniv)]).T
@@ -281,10 +280,10 @@ class flux_fitter:
         nBinsOA = np.sum(self.OAbins <= self.maxOA)
         nBinsHC = self.ND_HC.shape[1]
         
-        # # OA penalty term is a difference matrix
-        # OA_penalty = np.diag(nBinsOA*[1]) - np.diag((nBinsOA - 1)*[1], k = 1)
-        # OA penalty term is the L1 norm
-        OA_penalty = np.eye(nBinsOA)
+        # OA penalty term is a difference matrix
+        OA_penalty = np.diag(nBinsOA*[1]) - np.diag((nBinsOA - 1)*[1], k = 1)
+        # # OA penalty term is the L1 norm
+        # OA_penalty = np.eye(nBinsOA)
         HC_penalty = np.eye(nBinsHC)
         self.A = block_diag(OA_penalty, HC_penalty)
         Gamma = block_diag(OAreg*OA_penalty, HCreg*HC_penalty)

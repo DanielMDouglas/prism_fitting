@@ -180,9 +180,6 @@ class coeff_plot (plot):
         else:
             self.OAax = self.fig.gca()
 
-        if fitter:
-            self.add(fitter, **kwargs)
-            
         if "ylim" in kwargs:
             ylim = kwargs["ylim"]
         else:
@@ -212,11 +209,19 @@ class coeff_plot (plot):
             
         self.fig.tight_layout()
 
+        if fitter:
+            self.add(fitter, **kwargs)
+
     def add(self, fitter, label = None, color = None, HCplot = False):
-        self.OAax.plot(fitter.OAbins[fitter.OAbins <= fitter.maxOA],
+        # self.OAax.plot(fitter.OAbins[fitter.OAbins <= fitter.maxOA],
+        #                fitter.cOA,
+        #                color = color,
+        #                label = label)
+        self.OAax.step(fitter.OAbins[fitter.OAbins <= fitter.maxOA],
                        fitter.cOA,
                        color = color,
-                       label = label)
+                       label = label,
+                       where = 'mid')
         if self.HC:
             if HCplot:
                 self.HCax.plot(fitter.HCbins,
