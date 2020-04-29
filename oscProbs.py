@@ -1,4 +1,5 @@
 from utils import *
+import sys
 import os
 
 # Make sure that Prob3 is installed
@@ -10,6 +11,7 @@ else:
     print "[WARNING] Environment variable PROB3ROOT is unset! Using default location:"
     print Prob3Root
 
+sys.path.append(Prob3Root)    
 from Prob3 import BargerPropagator
 
 prob3Codes = {"nue": 1,
