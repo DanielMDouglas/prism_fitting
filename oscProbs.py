@@ -1,77 +1,53 @@
 from utils import *
 import os
 
-# previously computed probabilities are stored here
-# to avoid recalculating them every time
-if 'DP_OSC_PROB_DIR' in os.environ:
-    oscProbBaseDir = os.environ['DP_OSC_PROB_DIR']
+# Make sure that Prob3 is installed
+if 'PROB3ROOT' in os.environ:
+    Prob3Root = os.environ['PROB3ROOT']
 else:
-    oscProbBaseDir = "../oscProb/"
-    print "[WARNING] Environment variable DP_OSC_PROB_DIR is unset! Using default location:"
-    print oscProbBaseDir
+    Prob3Root = os.path.join(os.getcwd(), "Prob3")
+    os.environ['PROB3ROOT'] = Prob3Root
+    print "[WARNING] Environment variable PROB3ROOT is unset! Using default location:"
+    print Prob3Root
 
-# Make sure that DUNEPrismTools is installed
-# And its setup.sh has been sourced
-if 'DUNEPRISMTOOLSROOT' in os.environ:
-    dunePrismToolsRoot = os.environ['DUNEPRISMTOOLSROOT']
-else:
-    raise EnvironmentError("Environment variable DUNEPRISMTOOLSROOT is unset!\nPlease make sure that DUNEPrismTools is installed and setup.")
+from Prob3 import BargerPropagator
 
-# Oscillation helper needs a flux file
-# get this in the same way as in fluxes.py
-if 'DP_FLUX_FILE' in os.environ:
-    systFileName = os.environ['DP_FLUX_FILE']
-else:
-    systFileName = "../flux/syst/DUNE_Flux_OffAxis_Nov2017Review_syst_shifts_fine.root"
-    print "[WARNING] Environment variable DP_FLUX_FILE is unset! Using default location:"
-    print systFileName
-
-pdgCodes = {"nue": "12",
-            "numu": "14",
-            "nutau": "16",
-            "nuebar": "-12",
-            "numubar": "-14",
-            "nutaubar": "-16"}
+prob3Codes = {"nue": 1,
+              "numu": 2,
+              "nutau": 3,
+              "nuebar": -1,
+              "numubar": -2,
+              "nutaubar": -3}
 
 class oscProb:
-    def __init__(self, fromFlavor, toFlavor, s23 = 0.53, s13 = 0.0215, dm32 = 2.46e-3, dcp = -np.pi/2):
+    def __init__(self, fromFlavor, toFlavor,
+                 s12 = 0.297, s13 = 0.0215, s23 = 0.53,
+                 dm21 = 7.37e-5, dm32 = 2.46e-3, dcp = -np.pi/2):
+
+        DipAngle_degrees = 5.8
+        LengthParam = np.cos(np.radians(90.0 + DipAngle_degrees))
+
+        self.s12 = s12
+        self.s13 = s13
+        self.s23 = s23
+        self.dm21 = dm21
+        self.dm32 = dm32
+        self.dcp = dcp
         
-        s23 = str(s23)
-        s13 = str(s13)
-        dm32 = str(dm32)
-        dcp = str(dcp)
+        self.bp = BargerPropagator()
+        self.bp.DefinePath(LengthParam, 0)
 
-        self.branchName = "POsc"
-
-        subdir = s23+"_"+s13+"_"+dm32+"_"+dcp
-        filename = fromFlavor+"_to_"+toFlavor+".root"
-        self.infileName = oscProbBaseDir + subdir+"/"+filename
-
-        if not subdir in os.listdir(oscProbBaseDir):
-            os.mkdir(oscProbBaseDir+subdir)
-        if not filename in os.listdir(oscProbBaseDir+subdir):
-            exe = dunePrismToolsRoot+"/bin/dp_OscillateFlux"
-            # arguments for dp_OscillatedFlux:
-            #    -d dip angle (degrees)
-            #    -p oscillation parameters (comma separated):
-            #        sin^2(theta_{12})
-            #        sin^2(theta_{13})
-            #        sin^2(theta_{23})
-            #        delta m^2_{12}
-            #        delta m^2_{32}
-            #        delta cp
-            #    -i input flux (not used, but required by dp_OscillateFlux)
-            #    -o output root file
-            #    -n PDG codes for oscillation mode (e.g., numu -> nue)
-            args = ["-d 5.8",
-                    "-p 0.297,"+s13+","+s23+",7.37E-5,"+dm32+","+dcp,
-                    "-i "+systFileName+",FD_nu_ppfx/LBNF_numu_flux_Nom",
-                    "-o "+oscProbBaseDir+subdir+"/"+fromFlavor+"_to_"+toFlavor+".root,tmp",
-                    "-n "+pdgCodes[fromFlavor]+","+pdgCodes[toFlavor]
-            ]
-            cmdString = " ".join([exe] + args)
-            
-            os.system(cmdString)
+        self.fromFlavor = prob3Codes[fromFlavor]
+        self.toFlavor = prob3Codes[toFlavor]
+        
         
     def load(self, Ebins):
-        return tgraph_to_array(self.infileName, self.branchName, Ebins)
+        P = []
+        for E in Ebins:
+            self.bp.SetMNS(self.s12, self.s13, self.s23,
+                           self.dm21, self.dm32, self.dcp,
+                           E, True, self.fromFlavor)
+            self.bp.propagate(self.toFlavor)
+            prob = self.bp.GetProb(self.fromFlavor, self.toFlavor)
+            P.append(prob)
+        return np.array(P)
