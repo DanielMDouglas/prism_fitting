@@ -10,10 +10,6 @@ This package relies on a working installation of ROOT with Python support
 
 [root.cern.ch](root.cern.ch)
 
-It also requires (for the time being) Luke Pickering's DUNEPrismTools for calculating oscillation probabilities
-
-[https://github.com/luketpickering/DUNEPrismTools](https://github.com/luketpickering/DUNEPrismTools)
-
 Numpy and Matplotlib are also required.
 
 Lastly, you will need some root files containing at lease one near detector flux (as a function of energy and off-axis angle) and one far detector flux (as a function of energy).  If you are unable to find these, please contact the author.
@@ -24,13 +20,11 @@ The following environment variables *must* be set:
 
 `ROOTSYS`: points to the install location of the CERN ROOT package.  Usually set by sourcing `/path/to/ROOT/installation/bin/thisroot.sh`.
 
-`DUNEPRISMTOOLSROOT`: points to the install location of DUNEPrismTools.  Can be set by sourcing `/path/to/DUNEPrismTools/installation/setup.sh`.
-
 These variables are not required, but highly recommended:
 
-`DP_FLUX_FILE`: points to the root file containing nominal and systematic fluxes.  If this is unset, `fluxes.py` will look for `../flux/syst/DUNE_Flux_OffAxis_Nov2017Review_syst_shifts_fine.root` instead.
+`PROB3ROOT`: points to the install location of the python-compatible Prob3 package (https://github.com/DanielMDouglas/Prob3).  Currently, there is no setup script, but this will come soon!  If this is unset, `oscProbs.py` will look for `./Prob3/` instead. 
 
-`DP_OSC_PROB_DIR`: points to the directory where oscillation probabilities are stored.  If this is unset, `oscProbs.py` will use `../oscProb/` instead.
+`DP_FLUX_FILE`: points to the root file containing nominal and systematic fluxes.  If this is unset, `fluxes.py` will look for `../flux/syst/DUNE_Flux_OffAxis_Nov2017Review_syst_shifts_fine.root` instead.
 
 ## Components
 
