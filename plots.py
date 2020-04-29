@@ -5,6 +5,7 @@ from matplotlib.gridspec import GridSpec
 import os
 
 from utils import *
+from fluxes import *
 
 DUNEblue = '#7FAED5'
 DUNElightOrange = '#F19E54'
@@ -12,13 +13,22 @@ DUNEdarkOrange = '#F0652B'
 DUNEgreen = '#8ACA6F'
 DUNEgray = '#626466'
 DUNEyellow = '#FBD03F'
+DUNEpurple = '#5B3069'
+DUNElightPurple = '#8C6E96'
+DUNEcyan = '#42C2A8'
+DUNEpink = '#F7AEC2'
 
 DUNEcolors = [DUNEblue,
               DUNElightOrange,
-              DUNEdarkOrange,
               DUNEgreen,
+              DUNEdarkOrange,
               DUNEyellow,
-              DUNEgray]
+              DUNEpink,
+              DUNEpurple,
+              DUNEcyan,
+              DUNEgray,
+              DUNElightPurple,
+]
 
 LaTeXflavor = {"numu": r'$\nu_\mu$',
                "numubar": r'$\bar{\nu}_\mu$',
@@ -42,7 +52,7 @@ class plot:
             self.fig.savefig(fileName, *args, **kwargs)
 
 class fit_and_ratio_plot (plot):
-    def __init__(self, fitter = None, useTarget = True, title = None, **kwargs):
+    def __init__(self, fitter = None, useTarget = True, useFit = True, title = None, Ebounds = True, **kwargs):
         
         bandBounds = (0.16, 0.84)
 
@@ -64,8 +74,9 @@ class fit_and_ratio_plot (plot):
             
         if fitter:
             if useTarget:
-                self.add_target(fitter)
-            self.add(fitter, **kwargs)
+                self.add_target(fitter, Ebounds)
+            if useFit:
+                self.add(fitter, **kwargs)
             
         self.axUp.set_xlim(0, 10)
         self.axUp.set_xticklabels([])
@@ -89,7 +100,10 @@ class fit_and_ratio_plot (plot):
 
         self.fig.tight_layout()
 
-    def add_target(self, fitter, label = None, full_flux = True, Ebounds = True):
+        self.full_flux = True
+
+    def add_target(self, fitter, label = None, full_flux = True,
+                   Ebounds = True, color = 'black', **kwargs):
         self.full_flux = full_flux
         if full_flux:
             self.target = fitter.FD_oscillated
@@ -97,14 +111,16 @@ class fit_and_ratio_plot (plot):
             self.target = fitter.target
         targetNomLine, = self.axUp.plot(fitter.Ebins,
                                         self.target,
-                                        color = 'black')
-        self.legLineList.append(targetNomLine)
-        if not label:
-            label = ''.join([r'FD ',
-                             LaTeXflavor[fitter.FDfromFlavor],
-                             r' $\rightarrow$ ',
-                             LaTeXflavor[fitter.FDtoFlavor]])
-        self.legLabelList.append(label)
+                                        color = color,
+                                        **kwargs)
+        # if not label:
+        #     label = ''.join([r'FD ',
+        #                      LaTeXflavor[fitter.FDfromFlavor],
+        #                      r' $\rightarrow$ ',
+        #                      LaTeXflavor[fitter.FDtoFlavor]])
+        if label:
+            self.legLineList.append(targetNomLine)
+            self.legLabelList.append(label)
 
         if Ebounds:
             self.axUp.axvline(x = fitter.Ebounds[0],
@@ -138,10 +154,11 @@ class fit_and_ratio_plot (plot):
                          self.legLabelList,
                          **self.legArgs)
         
-    def add(self, fitter, label = None, color = None):
+    def add(self, fitter, label = None, color = None, **kwargs):
         NDNomLine, = self.axUp.plot(fitter.Ebins,
                                     np.dot(fitter.ND_full, fitter.c),
-                                    color = color)
+                                    color = color,
+                                    **kwargs)
         self.legLineList.append(NDNomLine)
         
         if not label:
@@ -165,7 +182,7 @@ class fit_and_ratio_plot (plot):
                          **self.legArgs)
 
 class coeff_plot (plot):
-    def __init__(self, fitter = None, title = "Coefficients", HC = True, **kwargs):
+    def __init__(self, fitter = None, title = "Coefficients", HC = True, legend = True, **kwargs):
         self.fig = plt.figure()
 
         self.HC = HC
@@ -189,15 +206,16 @@ class coeff_plot (plot):
         self.OAax.grid(True)
         self.OAax.set_xlabel(r'$D_{OA}$ [m]')
         self.OAax.set_ylabel(r'$c_i$')
+        self.OAax.ticklabel_format(axis = 'y', style = 'sci', scilimits = (0,0))
 
         if self.HC:
             self.HCax.set_ylim(-ylim, ylim)
             self.HCax.grid(True)
             self.HCax.set_xlabel(r'Horn Current [kA]')
             self.HCax.set_yticklabels([])
+            self.HCax.ticklabel_format(axis = 'x', style = 'plain', useOffset = False)
 
-        if "title" in kwargs:
-            self.fig.suptitle(kwargs["title"])
+        self.fig.suptitle(title)
         if "legendLoc" in kwargs:
             self.legendLoc = kwargs["legendLoc"]
         else:
@@ -206,13 +224,14 @@ class coeff_plot (plot):
         self.legArgs = {}
         if "fontSize" in kwargs:
             self.legArgs.update({"prop": {"size": kwargs["fontSize"]}})
+        self.legend = legend
             
         self.fig.tight_layout()
 
         if fitter:
             self.add(fitter, **kwargs)
 
-    def add(self, fitter, label = None, color = None, HCplot = False):
+    def add(self, fitter, label = None, color = None, HCplot = False, **kwargs):
         # self.OAax.plot(fitter.OAbins[fitter.OAbins <= fitter.maxOA],
         #                fitter.cOA,
         #                color = color,
@@ -235,11 +254,13 @@ class coeff_plot (plot):
                                   marker = "+",
                                   s = 500,
                                   label = label)
-        if label:
-            if self.legendLoc == "left":
-                self.OAax.legend(**self.legArgs)
-            elif self.legendLoc == "right":
-                self.HCax.legend(**self.legArgs)
+
+        if self.legend:
+            if label:
+                if self.legendLoc == "left":
+                    self.OAax.legend(**self.legArgs)
+                elif self.legendLoc == "right":
+                    self.HCax.legend(**self.legArgs)
 
 class ND_flux_plot (plot):
     def __init__(self, fitter, title = "ND Flux"):
@@ -294,18 +315,51 @@ class ND_flux_slice_plot (plot):
                            labels,
                            frameon = False)
             
-        self.ax.set_xlim(np.min(fitter.Ebins), np.max(fitter.Ebins))
+        # self.ax.set_xlim(np.min(fitter.Ebins), np.max(fitter.Ebins))
+        self.ax.set_xlim(0, 5)
         
         self.ax.set_title("ND Flux")
         self.fig.tight_layout()
 
 class FD_flux_plot (plot):
-    def __init__(self, fitter, title = None, color = None, aspect = None, figSize = (6.4, 4.8)):
+    def __init__(self, fitter = None, title = "FD Oscillated Flux", aspect = None, figSize = (6.4, 4.8), legendOn = True, **kwargs):
         self.fig = plt.figure(figsize = figSize)
         self.ax = self.fig.gca()
 
-        self.legLabelList = [r'FD ' + LaTeXflavor[fitter.FDfromFlavor]
-                             + r' $\rightarrow$ ' + LaTeXflavor[fitter.FDtoFlavor]]
+        self.legendOn = legendOn
+
+        self.legLabelList = []
+        self.legLineList = []
+
+        self.legArgs = {"frameon": False}
+        if "legCols" in kwargs:
+            self.legArgs.update({"ncol": kwargs["legCols"]})
+        if "xlim" in kwargs:
+            self.ax.set_xlim(*kwargs["xlim"])
+        else:
+            self.ax.set_xlim(0, 10)
+        if "ymax" in kwargs:
+            self.ymax = kwargs["ymax"]
+        else:
+            self.ymax = 0
+
+        if fitter:
+             self.add(fitter, **kwargs)
+
+        self.ax.set_xlabel(r'$E_\nu$ [GeV]')
+        self.ax.set_ylabel(r'$\Phi$ [cm$^{-2}$ per POT per GeV]')
+
+        self.ax.set_title(title)
+
+        # self.ax.grid()
+        self.ax.set_title(title)
+        self.fig.tight_layout()
+
+            
+    def add(self, fitter, label = None, color = None, **kwargs):
+        # if not label:
+        #     label = r'FD ' + LaTeXflavor[fitter.FDfromFlavor] + r' $\rightarrow$ ' + LaTeXflavor[fitter.FDtoFlavor]
+        self.legLabelList.append(label)
         
         if "FD_unosc_univs" in dir(fitter):
             oscillated = fitter.FD_unosc_univs*self.Posc
@@ -316,38 +370,65 @@ class FD_flux_plot (plot):
                                  alpha = 0.5,
                                  color = color)
             
+        line = self.ax.plot(fitter.Ebins,
+                            fitter.FD_oscillated,
+                            color = color)
+        
+        self.legLineList.append(line[0])
+        
+        if self.legendOn:
+            self.ax.legend(self.legLineList,
+                           self.legLabelList,
+                           **self.legArgs)
+        
+        self.ymax = max(self.ymax, 1.2*np.max(fitter.FD_oscillated))
+        self.ax.set_ylim(0, self.ymax)
+
+        return line
+
+    def add_unosc(self, fitter, label = r'FD Unoscillated', color = None):
+        self.legLabelList.append(label)
+        
+        if "FD_unosc_univs" in dir(fitter):
+            lower, upper = np.quantile(fitter.FD_unosc_univs, [0.16, 0.84], axis = 0)
+            self.ax.fill_between(fitter.Ebins,
+                                 lower,
+                                 upper,
+                                 alpha = 0.5,
+                                 color = color)
+            
+        line = self.ax.plot(fitter.Ebins,
+                            fitter.FD_unoscillated,
+                            color = color)
+        
+        self.legLineList.append(line[0])
+        
+        if self.legendOn:
+            self.ax.legend(self.legLineList,
+                           self.legLabelList,
+                           **self.legArgs)
+        
+        self.ymax = max(self.ymax, 1.2*np.max(fitter.FD_unoscillated))
+        self.ax.set_ylim(0, self.ymax)
+
+        return line
+
+                
+    def add_fit(self, fitter, color = None, linestyle = None, label = r'ND Flux Match'):
         line, = self.ax.plot(fitter.Ebins,
-                             fitter.FD_oscillated,
-                             color = color)
+                            np.dot(fitter.ND_full, fitter.c),
+                            color = color,
+                            linestyle = linestyle)
+        self.legLineList.append(line)
+        self.legLabelList.append(label)
 
-        self.legLineList = [line]
+        if self.legendOn:
+            self.ax.legend(self.legLineList,
+                           self.legLabelList,
+                           **self.legArgs)
 
-        self.ax.set_xlabel(r'$E_\nu$ [GeV]')
-        self.ax.set_ylabel(r'$\Phi$ [cm$^{-2}$ per POT per GeV]')
-
-        self.ax.set_title(title)
-
-        self.ax.legend(self.legLineList,
-                       self.legLabelList,
-                       frameon = False)
-        
-        # self.ax.grid()
-        self.ax.set_xlim(0, 10)
-        self.ax.set_ylim(0, 1.2*np.max(fitter.FD_oscillated))
-        self.ax.set_title("FD Oscillated Flux")
-        self.fig.tight_layout()
-
-    def add_fit(self, fitter, color = None):
-        fitLine, = self.ax.plot(fitter.Ebins,
-                                np.dot(fitter.ND_full, fitter.c),
-                                color = color)
-        self.legLineList.append(fitLine)
-        self.legLabelList.append(r'ND Flux Match')
-        
-        self.ax.legend(self.legLineList,
-                       self.legLabelList,
-                       frameon = False)
-
+        return line
+            
 class FD_flux_osc_and_unosc_plot (plot):
     def __init__(self, fitter, title = "FD Flux", inset_text = None, logScale = False, figSize = (6.4, 4.8)):
         self.fig = plt.figure(figsize = figSize)
@@ -434,9 +515,9 @@ class FD_flux_osc_and_unosc_plot (plot):
         self.ax.legend(self.legLineList,
                        self.legLabelList,
                        frameon = False)
-        
+ 
 class mike_plot (plot):
-    def __init__(self, fitter = None, varType = "ppfx", varKey = 0, label = r'ND \& FD', title = None):
+    def __init__(self, fitter = None, varType = "ppfx", varKey = 0, label = r'ND \& FD', title = None, binEdges = [], ylim = None):
         self.fig = plt.figure()
         gs = GridSpec(2, 1,
                       figure = self.fig,
@@ -453,6 +534,8 @@ class mike_plot (plot):
             self.axUp.set_title(title)
         self.axUp.set_ylabel(r'$(\Phi_V - \Phi_N)/\Phi_{FD, unosc}$')
         self.axUp.set_xlim(0, 10)
+        if ylim:
+            self.axUp.set_ylim(-ylim, ylim)
         self.axUp.set_xticklabels([])
 
         self.axLo.grid()
@@ -462,6 +545,8 @@ class mike_plot (plot):
         self.axLo.set_ylim(-0.06, 0.06)
         self.axLo.set_yticks([-0.05, 0, 0.05])
         self.fig.tight_layout()
+
+        self.binEdges = binEdges
 
         if fitter:
             self.add(fitter, varType = varType, varKey = varKey, label = label) 
@@ -474,13 +559,20 @@ class mike_plot (plot):
             var_target = fitter.FD_unosc_other_univs[varKey]*fitter.Posc
             ND_univ = fitter.ND_other_univs[varKey]
 
-        NDLine, = self.axUp.plot(fitter.Ebins,
-                                 (np.dot(ND_univ, fitter.c) - np.dot(fitter.ND, fitter.c))/fitter.FD_unoscillated,
-                                 ls = '-')
-        FDLine, = self.axUp.plot(fitter.Ebins,
-                                 (var_target - fitter.target)/fitter.FD_unoscillated,
-                                 color = NDLine.get_color(),
-                                 ls = '--')
+        ND = (np.dot(ND_univ, fitter.c) - np.dot(fitter.ND, fitter.c))/fitter.FD_unoscillated
+        FD = (var_target - fitter.target)/fitter.FD_unoscillated
+        if np.any(self.binEdges):
+            binCenters = average_by_bin_edge(fitter.Ebins, fitter.Ebins, self.binEdges)
+            ND = average_by_bin_edge(ND, fitter.Ebins, self.binEdges)
+            FD = average_by_bin_edge(FD, fitter.Ebins, self.binEdges)
+        else:
+            binCenters = fitter.Ebins
+        NDLine, = self.axUp.plot(binCenters,
+                                 ND,
+                                 color = DUNEblue)
+        FDLine, = self.axUp.plot(binCenters,
+                                 FD,
+                                 color = DUNElightOrange)
 
         self.legLineList.append(NDLine)
         self.legLineList.append(FDLine)
@@ -494,10 +586,10 @@ class mike_plot (plot):
                           ls = '--',
                           color = 'r')
 
-        self.thisDiff = ((np.dot(ND_univ, fitter.c) - np.dot(fitter.ND, fitter.c))
-                         -(var_target - fitter.target))/fitter.FD_unoscillated
-        self.axLo.plot(fitter.Ebins,
-                       self.thisDiff)
+        self.thisDiff = ND - FD
+        self.axLo.plot(binCenters,
+                       self.thisDiff,
+                       color = DUNEdarkOrange)
         self.axLo.axvline(x = fitter.Ebounds[0],
                           ls = '--',
                           color = 'r')
@@ -509,10 +601,14 @@ class mike_plot (plot):
                          self.legLabelList)
  
 class mike_summary_plot (plot):
-    def __init__(self, fitter, varType = "ppfx", title = None, makeIndividuals = False):
-        self.fig = plt.figure()
-        self.ax = self.fig.gca()
-        
+    def __init__(self, fitter, varType = "ppfx", title = None, makeIndividuals = False, ax = None, color = None, ylabels = True, binEdges = None):
+        if not ax:
+            self.fig = plt.figure()
+            self.ax = self.fig.gca()
+            self.fig.tight_layout()
+        else:
+            self.ax = ax
+            
         if title:
             self.ax.set_title(title)
 
@@ -520,12 +616,12 @@ class mike_summary_plot (plot):
 
         self.ax.grid()
         self.ax.set_xlabel(r'$E_\nu$ [GeV]')
-        self.ax.set_ylabel(r'$\left[\left(\Phi^{ND}_V - \Phi^{ND}_N\right) - \left(\Phi^{FD}_V - \Phi^FD_N\right)\right]/\Phi^{FD}_{\mathrm{unosc.}}$')
+        if ylabels:
+            self.ax.set_ylabel(r'$\left[\left(\Phi^{ND}_V - \Phi^{ND}_N\right) - \left(\Phi^{FD}_V - \Phi^FD_N\right)\right]/\Phi^{FD}_{\mathrm{unosc.}}$')
         self.ax.set_xlim(0, 10)
         self.ax.set_ylim(-0.12, 0.12)
         self.ax.set_yticks([-0.1, -0.05, 0, 0.05, 0.1])
         self.ax.set_yticklabels(["-10\%", "-5\%", "0\%", "5\%", "10\%"])
-        self.fig.tight_layout()
 
         if varType == "ppfx":
             varTargetsUnosc = fitter.FD_unosc_ppfx_univs
@@ -536,21 +632,28 @@ class mike_summary_plot (plot):
             varNDs = fitter.ND_other_univs
             self.varKeys = systKeys
 
+        if np.any(binEdges):
+            binCenters = average_by_bin_edge(fitter.Ebins, fitter.Ebins, binEdges)
+        else:
+            binCenters = fitter.Ebins
+
         diffs = []
         self.subPlots = []
         for varKey in self.varKeys:
-            thisMikePlot = mike_plot(fitter, varType, varKey)
+            thisMikePlot = mike_plot(fitter, varType, varKey, binEdges = binEdges)
             diffs.append(thisMikePlot.thisDiff)
             if not makeIndividuals:
                 plt.close(thisMikePlot.fig)
             else:
                 self.subPlots.append(thisMikePlot)
                 
-        self.ax.fill_between(fitter.Ebins,
+        self.ax.fill_between(binCenters,
                              *np.quantile(diffs, (0.16, 0.84), axis = 0),
+                             color = color,
                              alpha = 0.5)
-        self.ax.plot(fitter.Ebins,
-                     np.median(diffs, axis = 0))
+        self.line, = self.ax.plot(binCenters,
+                                  np.median(diffs, axis = 0),
+                                  color = color)
         self.ax.axvline(x = fitter.Ebounds[0],
                         ls = '--',
                         color = 'r')
@@ -558,12 +661,13 @@ class mike_summary_plot (plot):
                         ls = '--',
                         color = 'r')
 
+        plt.tight_layout()
+        
     def save(self, fileName, remake = True, *args, **kwargs):
         plot.save(self, fileName, remake = remake, *args, **kwargs)
         if self.makeIndividuals:
             for subPlot, varKey in zip(self.subPlots, self.varKeys):
                 subPlot.save(fileName.replace(".", "_"+str(varKey)+"."), remake = remake, **kwargs)
-
 class L_curve_plot (plot):
     def __init__(self, fitter = None, **kwargs):
         self.fig = plt.figure()
@@ -583,7 +687,7 @@ class L_curve_plot (plot):
 
         self.fig.tight_layout()
         
-    def add(self, fitter, regRange = np.logspace(-11, -8, 1000), highlight = [], **kwargs):
+    def add(self, fitter, regRange = np.logspace(-11, -5, 1000), highlight = [], **kwargs):
         if "ND" in kwargs:
             ND = kwargs["ND"]
         else:
@@ -646,7 +750,7 @@ class L_curve_curvature_plot (plot):
 
         self.fig.tight_layout()
         
-    def add(self, fitter, regRange = np.logspace(-11, -8, 1000), highlight = [], **kwargs):
+    def add(self, fitter, regRange = np.logspace(-11, -5, 1000), showOpt = True, highlight = [], **kwargs):
         if "ND" in kwargs:
             ND = kwargs["ND"]
         else:
@@ -664,7 +768,7 @@ class L_curve_curvature_plot (plot):
             else:
                 HCreg = kwargs["HCreg"]
 
-            fitter.calc_coeffs(reg, HCreg, ND = ND, target = target)
+            fitter.calc_coeffs(reg, HCreg, ND = ND, target = target, **kwargs)
             res.append(fitter.residual_norm(**kwargs))
             sol.append(fitter.solution_norm(**kwargs))
 
@@ -682,6 +786,14 @@ class L_curve_curvature_plot (plot):
 
         line, = self.ax.plot(regRange[1:-1], curv)
 
+        maxCurv = np.max(curv[~np.isnan(curv)])
+        self.opt_l = regRange[1:-1][curv == maxCurv]
+        if showOpt:
+            self.ax.axvline(x = self.opt_l,
+                            label = r'$\lambda = $'+str(self.opt_l),
+                            ls = '--',
+                            color = 'red')
+
         if "label" in kwargs:
             self.legLabelList.append(kwargs["label"])
             self.legLineList.append(line)
@@ -691,6 +803,5 @@ class L_curve_curvature_plot (plot):
                            self.legLabelList,
                            frameon = False)
 
-        maxCurv = np.max(curv[~np.isnan(curv)])
-        self.opt_l = regRange[1:-1][curv == maxCurv]
-        return self.opt_l
+        
+        return self.opt_l[0]

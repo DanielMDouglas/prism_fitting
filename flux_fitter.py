@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 
 class flux_fitter:
-    def __init__(self, beamMode, FDfromFlavor, FDtoFlavor, NDflavor, oscParam = None, ErebinF = 1, useHC = True):
+    def __init__(self, beamMode, FDfromFlavor, FDtoFlavor, NDflavor, oscParam = None, rebin = 1, useHC = True):
         self.initNEbins = Ebins.size
         self.initNOAbins = OAbins.size
 
@@ -23,8 +23,11 @@ class flux_fitter:
 
         self.maxOA = np.max(self.OAbins)
 
-        self.rebinF = ErebinF
-        self.Ebins = average(self.Ebins, self.rebinF)
+        self.rebin = rebin
+        if type(self.rebin) == np.ndarray:
+            self.Ebins = average_by_bin_edge(self.Ebins, self.Ebins, self.rebin)
+        elif type(self.rebin) == int:
+            self.Ebins = average(self.Ebins, self.rebin)
 
         self.beamMode = beamMode
         self.FDfromFlavor = FDfromFlavor
@@ -44,43 +47,104 @@ class flux_fitter:
         self.ppfx_systs_loaded = False
         self.other_systs_loaded = False
 
-    def rebin_nom(self, rebinF):
-        self.ND_OA = average(self.ND_OA, rebinF)
-        self.ND_HC = average(self.ND_HC, rebinF)
-        self.ND_full = average(self.ND_full, rebinF)
-        self.FD_unoscillated = average(self.FD_unoscillated, rebinF)
-        self.FD_oscillated = average(self.FD_oscillated, rebinF)
-        self.Posc = average(self.Posc, rebinF)
-        self.target = average(self.target, rebinF)
-        self.Ebins = average(self.Ebins, rebinF)
+    def rebin_nom(self):
+        if type(self.rebin) == np.ndarray:
+            self.ND_OA = average_by_bin_edge(self.ND_OA,
+                                             self.Ebins,
+                                             self.rebin)
+            self.ND_HC = average_by_bin_edge(self.ND_HC,
+                                             self.Ebins,
+                                             self.rebin)
+            self.ND_full = average_by_bin_edge(self.ND_full,
+                                               self.Ebins,
+                                               self.rebin)
+            self.FD_unoscillated = average_by_bin_edge(self.FD_unoscillated,
+                                                       self.Ebins,
+                                                       self.rebin)
+            self.FD_oscillated = average_by_bin_edge(self.FD_oscillated,
+                                                     self.Ebins,
+                                                     self.rebin)
+            self.Posc = average_by_bin_edge(self.Posc,
+                                            self.Ebins,
+                                            self.rebin)
+            self.target = average_by_bin_edge(self.target,
+                                              self.Ebins,
+                                              self.rebin)
+            self.Ebins = average_by_bin_edge(self.Ebins,
+                                             self.Ebins,
+                                             self.rebin)
+        elif type(self.rebin) == int:
+            self.ND_OA = average(self.ND_OA,
+                                 self.rebin)
+            self.ND_HC = average(self.ND_HC,
+                                 self.rebin)
+            self.ND_full = average(self.ND_full,
+                                   self.rebin)
+            self.FD_unoscillated = average(self.FD_unoscillated,
+                                           self.rebin)
+            self.FD_oscillated = average(self.FD_oscillated,
+                                         self.rebin)
+            self.Posc = average(self.Posc,
+                                self.rebin)
+            self.target = average(self.target,
+                                  self.rebin)
+            self.Ebins = average(self.Ebins,
+                                 self.rebin)
         
-    def rebin_ppfx_systs(self, rebinF):
-        self.FD_unosc_ppfx_univs = average(self.FD_unosc_ppfx_univs, rebinF)
-        self.ND_OA_unosc_ppfx_univs = average(self.ND_OA_unosc_ppfx_univs, rebinF)
-        self.ND_HC_unosc_ppfx_univs = average(self.ND_HC_unosc_ppfx_univs, rebinF)
+    def rebin_ppfx_systs(self):
+        if type(self.rebin) == np.ndarray:
+            self.FD_unosc_ppfx_univs = average_by_bin_edge(self.FD_unosc_ppfx_univs,
+                                                           self.Ebins,
+                                                           self.rebin)
+            self.ND_OA_unosc_ppfx_univs = average_by_bin_edge(self.ND_OA_unosc_ppfx_univs,
+                                                              self.Ebins,
+                                                              self.rebin)
+            self.ND_HC_unosc_ppfx_univs = average_by_bin_edge(self.ND_HC_unosc_ppfx_univs,
+                                                              self.Ebins,
+                                                              self.rebin)
+        elif type(self.rebin) == int:
+            self.FD_unosc_ppfx_univs = average(self.FD_unosc_ppfx_univs,
+                                               self.rebin)
+            self.ND_OA_unosc_ppfx_univs = average(self.ND_OA_unosc_ppfx_univs,
+                                                  self.rebin)
+            self.ND_HC_unosc_ppfx_univs = average(self.ND_HC_unosc_ppfx_univs,
+                                                  self.rebin)
         
-    def rebin_other_systs(self, rebinF):
+    def rebin_other_systs(self):
         pass
     
-    def rebin(self, rebinF):
-        self.rebinF = rebinF
-        
-        self.rebin_nom(rebinF)
+    def set_rebin(self, rebin):
+        self.rebin = rebin
 
         if self.ppfx_systs_loaded:
-            self.rebin_ppfx_systs(rebinF)
+            self.rebin_ppfx_systs()
         if self.other_systs_loaded:
-            self.rebin_other_systs(rebinF)
+            self.rebin_other_systs()
+        
+        self.rebin_nom()
 
     def load_FD_nom(self):
         self.FD_unoscillated = FD_nominal[self.beamMode][self.FDfromFlavor].load()
-        self.FD_unoscillated = average(self.FD_unoscillated, self.rebinF)
+        if type(self.rebin) == np.ndarray:
+            self.FD_unoscillated = average_by_bin_edge(self.FD_unoscillated,
+                                                       Ebins,
+                                                       self.rebin)
+        elif type(self.rebin) == int:
+            self.FD_unoscillated = average(self.FD_unoscillated,
+                                           self.rebin)
         self.FD_oscillated = self.FD_unoscillated*self.Posc
         self.target = self.FD_oscillated
 
     def load_ND_OA_nom(self):
         self.ND_OA = ND_nominal[self.beamMode][self.NDflavor].load()[:,OAbins <= self.maxOA]
-        self.ND_OA = average(self.ND_OA, self.rebinF)
+        if type(self.rebin) == np.ndarray:
+            print self.ND_OA.shape
+            self.ND_OA = average_by_bin_edge(self.ND_OA,
+                                             Ebins,
+                                             self.rebin)
+            print self.ND_OA.shape
+        elif type(self.rebin) == int:
+            self.ND_OA = average(self.ND_OA, self.rebin)
 
         if "ND_HC" in dir(self):
             self.ND_full = np.concatenate((self.ND_OA, self.ND_HC), axis = 1)
@@ -92,7 +156,13 @@ class flux_fitter:
                                    for current in self.HCbins]).T
         else:
             self.ND_HC = np.ndarray((self.initNEbins, 0))
-        self.ND_HC = average(self.ND_HC, self.rebinF)
+
+        if type(self.rebin) == np.ndarray:
+            self.ND_HC = 12*average_by_bin_edge(self.ND_HC,
+                                                Ebins,
+                                                self.rebin)
+        elif type(self.rebin) == int:
+            self.ND_HC = 12*average(self.ND_HC, self.rebin)
             
         if "ND_OA" in dir(self):
             self.ND_full = np.concatenate((self.ND_OA, self.ND_HC), axis = 1)
@@ -109,7 +179,13 @@ class flux_fitter:
                        in FD_ppfx_shifts[self.beamMode][self.FDfromFlavor][:nUniv]])
         
         FD /= FD_CV
-        FD = average(FD, self.rebinF, axis = 1)
+        if type(self.rebin) == np.ndarray:
+            print FD.shape
+            FD = average_by_bin_edge(FD, Ebins, self.rebin, axis = 1)
+            print FD.shape
+        elif type(self.rebin) == int:
+            FD = average(FD, self.rebin, axis = 1)
+            
         FD *= self.FD_unoscillated
 
         self.FD_unosc_ppfx_univs = FD
@@ -117,10 +193,16 @@ class flux_fitter:
     def load_ND_OA_ppfx_systs(self, nUniv = 100):
         ND_OA_CV = ND_ppfx_CV[self.beamMode][self.FDfromFlavor].load()[:, OAbins <= self.maxOA]
         ND_OA = np.array([shift.load() for shift
-                          in ND_ppfx_shifts[self.beamMode][self.FDfromFlavor][:nUniv]])[:, :, OAbins <= self.maxOA]
+                          in ND_ppfx_shifts[self.beamMode][self.NDflavor][:nUniv]])[:, :, OAbins <= self.maxOA]
 
         ND_OA /= ND_OA_CV
-        ND_OA = average(ND_OA, self.rebinF, axis = 1)
+        if type(self.rebin) == np.ndarray:
+            print ND_OA.shape
+            ND_OA = average_by_bin_edge(ND_OA, Ebins, self.rebin, axis = 1)
+            print ND_OA.shape
+        elif type(self.rebin) == int:
+            ND_OA = average(ND_OA, self.rebin, axis = 1)
+
         ND_OA *= self.ND_OA
 
         self.ND_OA_ppfx_univs = ND_OA
@@ -133,14 +215,19 @@ class flux_fitter:
         ND_HC_CV = np.array([ND_HC_ppfx_CV[self.beamMode][self.FDfromFlavor][current].load()
                              for current in self.HCbins]).T
         if np.any(self.HCbins):
-            ND_HC = np.array([np.array([ND_HC_ppfx_shifts[self.beamMode][self.FDfromFlavor][current][univ].load()
+            ND_HC = np.array([np.array([ND_HC_ppfx_shifts[self.beamMode][self.NDflavor][current][univ].load()
                                         for univ in range(nUniv)]).T
                               for current in self.HCbins]).T
         else:
             ND_HC = np.ndarray((nUniv, self.initNEbins, len(self.HCbins)))
 
         ND_HC /= ND_HC_CV
-        ND_HC = average(ND_HC, self.rebinF, axis = 1)
+
+        if type(self.rebin) == np.ndarray:
+            ND_HC = average_by_bin_edge(ND_HC, Ebins, self.rebin, axis = 1)
+        elif type(self.rebin) == int:
+            ND_HC = average(ND_HC, self.rebin, axis = 1)
+
         ND_HC *= self.ND_HC
         
         self.ND_HC_ppfx_univs = ND_HC
@@ -157,36 +244,61 @@ class flux_fitter:
         self.ppfx_systs_loaded = True
 
     def load_FD_other_systs(self):
-        FD = {key: average(shift.load(), self.rebinF) for key, shift
-              in FD_other_shifts[self.beamMode][self.FDfromFlavor].items()}
+        if type(self.rebin) == np.ndarray:
+            FD = {key: average_by_bin_edge(shift.load(),
+                                           Ebins,
+                                           self.rebin) for key, shift
+                  in FD_other_shifts[self.beamMode][self.FDfromFlavor].items()}
+        elif type(self.rebin) == int:
+            FD = {key: average(shift.load(), self.rebin) for key, shift
+                  in FD_other_shifts[self.beamMode][self.FDfromFlavor].items()}
 
         self.FD_unosc_other_univs = FD
 
     def load_ND_OA_other_systs(self):
-        ND_OA = {key: average(shift.load(), self.rebinF) for key, shift
-                 in ND_other_shifts[self.beamMode][self.FDfromFlavor].items()}
-
+        if type(self.rebin) == np.ndarray:
+            ND_OA = {key: average_by_bin_edge(shift.load(),
+                                              Ebins,
+                                              self.rebin)[:, OAbins <= self.maxOA] for key, shift
+                     in ND_other_shifts[self.beamMode][self.NDflavor].items()}
+        elif type(self.rebin) == int:
+            ND_OA = {key: average(shift.load(), self.rebin)[:, OAbins <= self.maxOA] for key, shift
+                     in ND_other_shifts[self.beamMode][self.NDflavor].items()}
+        
         self.ND_OA_other_univs = ND_OA
         if "ND_HC_other_univs" in dir(self):
-            self.ND_other_univs = np.concatenate((self.ND_OA_other_univs,
-                                                  self.ND_HC_other_univs),
-                                                 axis = 2)
+            self.ND_other_univs = {key: np.concatenate((self.ND_OA_other_univs[key],
+                                                        self.ND_HC_other_univs[key]),
+                                                       axis = 1)
+                                   for key in systKeys}
 
     def load_ND_HC_other_systs(self):
-        ND = {key: shift.load() for key, shift
-              in ND_other_shifts[self.beamMode][self.FDfromFlavor].items()}
-
-        self.ND_HC_other_univs = ND_OA
+        # Don't have HC beam systs yet, so fake them by assuming
+        # the same fractional error as seen in 293 kA
+        if np.any(self.HCbins):
+            ND_HC = {}
+            for key in HCsystKeys:
+                currentList = []
+                for current in self.HCbins:
+                    thisFlux = ND_HC_other_shifts[self.beamMode][self.NDflavor][current][key].load()
+                    if type(self.rebin) == np.ndarray:
+                        currentList.append(12*average_by_bin_edge(thisFlux, Ebins, self.rebin))
+                    elif type(self.rebin) == int:
+                        currentList.append(12*average(thisFlux, self.rebin))
+                arr = np.array(currentList).T
+                ND_HC.update({key: arr})
+        else:
+            ND_HC = {key: np.ndarray((self.Ebins.size, len(self.HCbins)))
+                     for key in HCsystKeys}
+            
+        self.ND_HC_other_univs = ND_HC
         if "ND_OA_other_univs" in dir(self):
-            self.ND_other_univs = np.concatenate((self.ND_OA_other_univs,
-                                                  self.ND_HC_other_univs),
-                                                 axis = 2)
-        
-    def load_other_systs(self):
-        
-        self.FD_unosc_other_univs = FD
-        self.ND_other_univs = ND
+            self.ND_other_univs = {key: np.concatenate((self.ND_OA_other_univs[key],
+                                                        self.ND_HC_other_univs[HCkey]),
+                                                       axis = 1)
+                                   for key, HCkey in zip(systKeys, HCsystKeys)}
 
+    def load_other_systs(self):
         self.load_FD_other_systs()
         self.load_ND_OA_other_systs()
         self.load_ND_HC_other_systs()
@@ -233,41 +345,37 @@ class flux_fitter:
     def set_maxOA(self, maxOA):
         self.maxOA = maxOA
         self.OAbins = OAbins[OAbins <= maxOA]
+
         self.load_ND_OA_nom()
 
         if self.ppfx_systs_loaded:
             self.load_ND_OA_ppfx_systs()
-
+        if self.other_systs_loaded:
+            self.load_ND_OA_other_systs()
+            
     def set_maxHC(self, maxHC):
         self.maxHC = maxHC
-        # self.ND_HC = np.array([ND_HC_shifts[self.beamMode][self.NDflavor][current].load()
-        #                        for current in currents])[self.HCbins <= maxHC]
         self.HCbins = self.HCbins[self.HCbins <= maxHC]
 
         self.load_ND_HC_nom()
-        # self.ND_HC = average(self.ND_HC, rebinF)
-        # self.ND_full = np.concatenate((self.ND_OA, self.ND_HC.T), axis = 1)
-
+       
         if self.ppfx_systs_loaded:
             self.load_ND_HC_ppfx_systs()
+        if self.other_systs_loaded:
+            self.load_ND_HC_other_systs()
 
     def use_currents(self, theseCurrents):
         self.maxHC = max(list(theseCurrents) + [293])
-        if np.any(theseCurrents):
-            self.ND_HC = np.array([8*ND_HC_shifts[self.beamMode][self.NDflavor][thisCurrent].load()
-                                   for thisCurrent in theseCurrents]).T
-            self.ND_HC = average(self.ND_HC, self.rebinF)
-        else:
-            self.ND_HC = np.ndarray((self.ND_HC.shape[0], 0))
         self.HCbins = np.array(theseCurrents)
         
-        self.ND_full = np.concatenate((self.ND_OA, self.ND_HC), axis = 1)
-        self.ND = self.ND_full
-
+        self.load_ND_HC_nom()
+        
         if self.ppfx_systs_loaded:
             self.load_ND_HC_ppfx_systs()
-
-    def calc_coeffs(self, OAreg, HCreg, ND = [None], target = [None], fluxTimesE = False):
+        if self.other_systs_loaded:
+            self.load_ND_HC_other_systs()
+            
+    def calc_coeffs(self, OAreg, HCreg, ND = [None], target = [None], fluxTimesE = False, **kwargs):
         if not np.any(ND):
             ND = self.ND_full
         if not np.any(target):
@@ -300,6 +408,53 @@ class flux_fitter:
         # ND matrix
         NDmatr = np.matrix(ND)
         LHS = np.matmul(NDmatr.T, np.matmul(P, NDmatr)) + np.matmul(Gamma.T, Gamma)
+        RHS = np.dot(np.matmul(NDmatr.T, P), target)
+
+        self.c = np.array(np.dot(RHS, LHS.I)).squeeze()
+        self.cOA = self.c[:nBinsOA]
+        self.cHC = self.c[nBinsOA:]
+
+    def calc_coeffs_DFT(self, OAreg, HCreg, filt, ND = [None], target = [None], fluxTimesE = False):
+        if not np.any(ND):
+            ND = self.ND_full
+        if not np.any(target):
+            target = self.target
+        if fluxTimesE:
+            ND = ND*self.Ebins.reshape(ND.shape[0], 1)
+            target = target*self.Ebins
+        # if not np.any(filt):
+        #     filt = np.ones_like(self.OAbins <= self.maxOA, dtype = float)
+            
+        # penalty matrix for coefficients
+        nBinsOA = np.sum(self.OAbins <= self.maxOA)
+        nBinsHC = self.ND_HC.shape[1]
+        
+        # # OA penalty term is a difference matrix
+        # OA_penalty = np.diag(nBinsOA*[1]) - np.diag((nBinsOA - 1)*[1], k = 1)
+        # # OA penalty term is the L1 norm
+        # OA_penalty = np.eye(nBinsOA)
+        # OA penalty is a frequency filter based on the DFT
+        from scipy.linalg import dft
+        # OA_penalty = np.diag(filt)*dft(nBinsOA) + OAreg*(np.diag(nBinsOA*[1]) - np.diag((nBinsOA - 1)*[1], k = 1))
+        OA_penalty = np.diag(filt)*dft(nBinsOA) + OAreg*(np.diag(nBinsOA*[1]) - np.diag((nBinsOA - 1)*[1], k = 1))
+        # print np.diag(filt)*dft(nBinsOA)
+        HC_penalty = np.eye(nBinsHC)
+        self.A = block_diag(OA_penalty, HC_penalty)
+        # Gamma = block_diag(OAreg*OA_penalty, HCreg*HC_penalty)
+        Gamma = block_diag(OA_penalty, HCreg*HC_penalty)
+        self.Gamma = Gamma
+
+        # weighting matrix for target flux
+        P = np.diag(np.where(self.Ebins > self.Ebounds[1],
+                             self.OutOfRegionFactors[1],
+                             np.where(self.Ebins < self.Ebounds[0],
+                                      self.OutOfRegionFactors[0],
+                                      1)))
+        self.P = P
+
+        # ND matrix
+        NDmatr = np.matrix(ND)
+        LHS = np.matmul(NDmatr.T, np.matmul(P, NDmatr)) + np.matmul(Gamma.T.conj(), Gamma)
         RHS = np.dot(np.matmul(NDmatr.T, P), target)
 
         self.c = np.array(np.dot(RHS, LHS.I)).squeeze()

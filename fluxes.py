@@ -29,7 +29,8 @@ else:
     # nomFileName = "../flux/syst/DUNE_Flux_OffAxis_Nov2017Review_syst_shifts_fine.root"
     # nomFileName = "../flux/DUNE_Flux_OffAxis_Nov2017Review_syst_shifts_finebin.root"
     # nomFileName = "../flux/DUNE_Flux_OffAxis_Nov2017Review_syst_shifts_finebin_HHCOnAxis.root"
-    nomFileName = "../flux/All_HC.root"
+    # nomFileName = "../flux/All_HC.root"
+    nomFileName = "../flux/all_HC_test.root"
     print "[WARNING] Environment variable DP_FLUX_FILE is unset! Using default location:"
     print nomFileName
 
@@ -43,35 +44,68 @@ else:
 
 # HCFileName = "../flux/syst/HigherHCFluxes.Fine.root"
 HCFileName = nomFileName
+HCSystFileName = "../flux/HC280_beamSysts.root"
 
 flavors = ["nue", "numu", "nuebar", "numubar"]
-# modes = ["nu", "nubar"]
-modes = ["nu"]
-currentNames = ["200",
-                "250",
-                "280",
-                "295.5",
-                "298",
-                "300.5",
-                "303",
-                "305.5",
-                "308",
-                "310.5",
-                "313",
-                "323",
-                "333",
-                "343"]
+modes = ["nu", "nubar"]
+# modes = ["nu"]
+# currentNames = ["200",
+#                 "250",
+#                 "280",
+#                 "295.5",
+#                 "298",
+#                 "300.5",
+#                 "303",
+#                 "305.5",
+#                 "308",
+#                 "310.5",
+#                 "313",
+#                 "323",
+#                 "333",
+#                 "343"]
+currentNames = ["280"]
 currents = np.array([float(i) for i in currentNames])
-systKeys = ["HC_p1",
-            "HC_m1",
-            "Horn1_XShift",
+HCsystKeys = ["Horn1XShift",
+              "Horn1YShift",
+              # "Horn1XNegShift",
+              # "Horn1X3mmShift",
+              # "Horn1XNeg3mmShift",
+              "Horn2XShift",
+              "Horn2YShift",
+              # "Horn2XNegShift",
+              "HCp1",
+              "HCm1",
+              "WLp1",
+              "DPR_p1",
+              "TargetDensityp1",
+              "TargetDensity_m1",
+              "BeamOffsetXp1",
+              "BeamOffsetX_m1",
+              "beamSigma_p1",
+              "beamSigmam1",
+              "BeamTheta_p1",
+              "BeamThetaPhi_p1",
+              # "DecayPipeXShift",
+              # "DecayPipeYShift",
+              # "Horn1And2_1mmShift",
+              # "Horn1And2_1mmTilt",
+              # "Horn1And2_2.5mmTilt",
+              # "Horn1And2_X1mmShift",
+              # "Horn1And2_X1mmTilt",
+              # "Horn1And2_Y1mmShift",
+              # "Horn1And2_Y1mmTilt",
+]
+    
+systKeys = ["Horn1_XShift",
             "Horn1_YShift",
-            "Horn1_XNegShift",
-            "Horn1_X3mmShift",
-            "Horn1_XNeg3mmShift",
+            # "Horn1_XNegShift",
+            # "Horn1_X3mmShift",
+            # "Horn1_XNeg3mmShift",
             "Horn2_XShift",
             "Horn2_YShift",
-            "Horn2_XNegShift",
+            # "Horn2_XNegShift",
+            "HC_p1",
+            "HC_m1",
             "WL_p1",
             "DPR_p1",
             "TargetDensity_p1",
@@ -82,7 +116,27 @@ systKeys = ["HC_p1",
             "BeamSigma_m1",
             "BeamTheta_p1",
             "BeamThetaPhi_p1"]
-
+systNames = [r'Horn 1 $x$ Position $+1 \sigma$',
+             r'Horn 1 $y$ Position $+1 \sigma$',
+             # r'Horn 1 $x$ Position $-1 \sigma$',
+             # r'Horn 1 $x$ Position $+3$ mm',
+             # r'Horn 1 $x$ Position $-3$ mm',
+             r'Horn 2 $x$ Position $+1 \sigma$',
+             r'Horn 2 $y$ Position $+1 \sigma$',
+             # r'Horn 2 $x$ Position $-1 \sigma$',
+             r'Horn Current $+1 \sigma$',
+             r'Horn Current $-1 \sigma$',
+             r'Water Layer $+1 \sigma$',
+             r'Decay Pipe Radius $+1 \sigma$',
+             r'Target Density $+1 \sigma$',
+             r'Target Density $-1 \sigma$',
+             r'Beam $x$ Offset $+1 \sigma$',
+             r'Beam $x$ Offset $-1 \sigma$',
+             r'Beam Width $+1 \sigma$',
+             r'Beam Width $-1 \sigma$',
+             r'Beam Direction ($\theta$) $+ 1 \sigma$',
+             r'Beam Direction ($\theta$, $\phi$) $+ 1 \sigma$']
+             
 # Using central value (CV) as nominal for now...
 # ND_nominal = {mode: {flavor: flux(nomFileName, "ND_"+mode+"_ppfx/LBNF_"+flavor+"_flux_Nom")
 #                      for flavor in ["nue", "numu", "nuebar", "numubar"]}
@@ -91,10 +145,20 @@ ND_nominal = {mode: {flavor: flux(nomFileName, "ND_"+mode+"_ppfx/LBNF_"+flavor+"
                      for flavor in flavors}
               for mode in modes}
 
-ND_HC_shifts = {mode: {flavor: {current: flux(HCFileName, "ND_"+mode+"_HC_"+str(currentName)+"/LBNF_"+flavor+"_flux_Nom")
+# ND_HC_shifts = {mode: {flavor: {current: flux(HCFileName, "ND_"+mode+"_HC_"+str(currentName)+"/LBNF_"+flavor+"_flux_Nom")
+#                                 for current, currentName in zip(currents, currentNames)}
+#                        for flavor in flavors}
+#                 for mode in modes}
+ND_HC_shifts = {"nu": {flavor: {current: flux(HCFileName, "ND_nu_HC_"+str(currentName)+"/LBNF_"+flavor+"_flux_Nom")
                                 for current, currentName in zip(currents, currentNames)}
-                       for flavor in flavors}
-                for mode in modes}
+                       for flavor in flavors},
+                "nubar": {flavor: {current: flux(HCFileName, "ND_nubar_HC"+str(currentName)+"/LBNF_"+flavor+"_flux")
+                                for current, currentName in zip(currents, currentNames)}
+                       for flavor in flavors}}
+# ND_HC_shifts = {mode: {flavor: {current: flux(HCFileName, "ND_"+mode+"_HC"+str(currentName)+"/LBNF_"+flavor+"_flux")
+#                                 for current, currentName in zip(currents, currentNames)}
+#                        for flavor in flavors}
+#                 for mode in modes}
 ND_HC_ppfx_shifts = {mode: {flavor: {current: [flux(HCFileName, "ND_"+mode+"_HC_"+str(currentName)+"/LBNF_"+flavor+"_flux_univ_"+str(i))
                                                for i in range(100)]
                                      for current, currentName in zip(currents, currentNames)}
@@ -104,6 +168,11 @@ ND_HC_ppfx_CV = {mode: {flavor: {current: flux(HCFileName, "ND_"+mode+"_HC_"+str
                                  for current, currentName in zip(currents, currentNames)}
                         for flavor in flavors}
                  for mode in modes}
+ND_HC_other_shifts = {mode: {flavor: {280: {key: flux(HCSystFileName, "ND_"+mode+"_"+key+"/LBNF_"+flavor+"_flux")
+                                                for key in HCsystKeys}
+                                      for current in [280]}
+                             for flavor in flavors}
+                      for mode in modes}
 
 # ND_shifts = {mode: {flavor: [flux(systFileName,
 #                                   "EffectiveFluxParameters/param_"+str(i)+"/ND_"+mode+"_"+flavor)

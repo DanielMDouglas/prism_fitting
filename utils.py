@@ -155,8 +155,36 @@ def rebin(oldHist, rebinF, axis = 0):
     return newHist
 
 
-def average(oldHist, rebinF, axis = 0):
-    return rebin(oldHist, rebinF, axis = axis)/float(rebinF)
+def rebin_by_bin_edge(oldHist, oldBinCenters, newBinEdges, axis = 0):
+    # WARNING: Only works for axis = 0 or 1 for now!
+    oldShape = oldHist.shape
+    newShape = oldShape[:axis] + tuple((newBinEdges.size-1,)) + oldShape[axis+1:]
+    newHist = np.ndarray(newShape)
+    if axis == 0:
+        for i, (leftEdge, rightEdge) in enumerate(zip(newBinEdges[:-1], newBinEdges[1:])):
+            newHist[i] = np.sum(oldHist[np.logical_and(leftEdge <= oldBinCenters,
+                                                       oldBinCenters < rightEdge)],
+                                axis = axis)
+        return newHist
+    elif axis == 1:
+        for i in range(newHist.shape[0]):
+            newHist[i] = rebin_by_bin_edge(oldHist[i], oldBinCenters, newBinEdges)
+        return newHist
+
+
+def average(oldHist, rebinF, **kwargs):
+    return rebin(oldHist, rebinF, **kwargs)/float(rebinF)
+
+
+def average_by_bin_edge(oldHist, oldBinCenters, newBinEdges, axis = 0):
+    rebinned = rebin_by_bin_edge(oldHist, oldBinCenters, newBinEdges, axis = axis)
+    binWidths = np.ndarray((rebinned.shape[axis]))
+    for i, (leftEdge, rightEdge) in enumerate(zip(newBinEdges[:-1], newBinEdges[1:])):
+        nInside = np.sum(np.logical_and(leftEdge <= oldBinCenters,
+                                        oldBinCenters < rightEdge),
+                         dtype = float)
+        rebinned[i] /= nInside
+    return rebinned
 
 
 def cut_arrays(ND, FD, FDunosc, Ebins, OAbins, Emax = 4, OAmax = None):
@@ -194,15 +222,26 @@ def plot_with_bands(x, y_coll, ax = plt, *args, **kwargs):
     lower, med, upper = np.quantile(y_coll, quantiles, axis = lastAxis)
     
     band = ax.fill_between(x, lower, upper, alpha = 0.5, *args, **kwargs)
-    line = ax.plot(x, med, *args, **kwargs)
+    line, = ax.plot(x, med, *args, **kwargs)
     return band, line
 
 
 def float_to_sci(thisFloat, digits = 2):
     raw_float_string = str(thisFloat)
+    print thisFloat
     if 'e' in raw_float_string:
         roundFactor = -int(raw_float_string.split('e')[-1]) + digits
         float_string = str(round(thisFloat, roundFactor)).replace('+', '')
         return r'$'+float_string.replace('e', r'\times 10^{')+'}$'
     else:
-        return r'$'+raw_float_string+r'$'
+        if thisFloat < 1:
+            shift = -5
+        else:
+            shift = 5
+        adjFloat = thisFloat*(10**shift)
+        newStr = float_to_sci(adjFloat, digits)
+        expBeg = newStr.index('{')+1
+        expEnd = newStr.index('}')
+        exp = int(newStr[expBeg:expEnd])
+        newExp = exp - shift
+        return newStr[:expBeg] + str(newExp) + newStr[expEnd:]

@@ -34,15 +34,16 @@ pdgCodes = {"nue": "12",
             "nutaubar": "-16"}
 
 class oscProb:
-    def __init__(self, fromFlavor, toFlavor, s23 = 0.5, dm32 = 2.6e-3, dcp = np.pi):
+    def __init__(self, fromFlavor, toFlavor, s23 = 0.53, s13 = 0.0215, dm32 = 2.46e-3, dcp = -np.pi/2):
         
         s23 = str(s23)
+        s13 = str(s13)
         dm32 = str(dm32)
         dcp = str(dcp)
 
         self.branchName = "POsc"
 
-        subdir = s23+"_"+dm32+"_"+dcp
+        subdir = s23+"_"+s13+"_"+dm32+"_"+dcp
         filename = fromFlavor+"_to_"+toFlavor+".root"
         self.infileName = oscProbBaseDir + subdir+"/"+filename
 
@@ -63,7 +64,7 @@ class oscProb:
             #    -o output root file
             #    -n PDG codes for oscillation mode (e.g., numu -> nue)
             args = ["-d 5.8",
-                    "-p 0.297,0.0215,"+s23+",7.37E-5,"+dm32+","+dcp,
+                    "-p 0.297,"+s13+","+s23+",7.37E-5,"+dm32+","+dcp,
                     "-i "+systFileName+",FD_nu_ppfx/LBNF_numu_flux_Nom",
                     "-o "+oscProbBaseDir+subdir+"/"+fromFlavor+"_to_"+toFlavor+".root,tmp",
                     "-n "+pdgCodes[fromFlavor]+","+pdgCodes[toFlavor]
