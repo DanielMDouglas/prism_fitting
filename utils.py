@@ -66,7 +66,7 @@ def root_to_axes(infileName, branchName, where = 'mid'):
         yBins = np.array([axes[1].GetBinLowEdge(i+1) for i in range(shape[1])])
         zBins = np.array([axes[2].GetBinLowEdge(i+1) for i in range(shape[2])])
     else:
-        print "options are 'mid' and 'pre'"
+        print("options are 'mid' and 'pre'")
         return
     
     return (xBins, yBins, zBins)
@@ -96,8 +96,6 @@ def optimize_reg(flux_matrix, err_array, target):
     res_norm = np.array([residual_norm(flux_matrix, err_array, target, l)
                          for l in l_space])
 
-    print sol_norm.shape, res_norm.shape
-    
     dl = np.diff(l_space)
     xi = np.log(sol_norm)
     rho = np.log(res_norm)
@@ -228,7 +226,6 @@ def plot_with_bands(x, y_coll, ax = plt, *args, **kwargs):
 
 def float_to_sci(thisFloat, digits = 2):
     raw_float_string = str(thisFloat)
-    print thisFloat
     if 'e' in raw_float_string:
         roundFactor = -int(raw_float_string.split('e')[-1]) + digits
         float_string = str(round(thisFloat, roundFactor)).replace('+', '')

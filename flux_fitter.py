@@ -138,11 +138,9 @@ class flux_fitter:
     def load_ND_OA_nom(self):
         self.ND_OA = ND_nominal[self.beamMode][self.NDflavor].load()[:,OAbins <= self.maxOA]
         if type(self.rebin) == np.ndarray:
-            print self.ND_OA.shape
             self.ND_OA = average_by_bin_edge(self.ND_OA,
                                              Ebins,
                                              self.rebin)
-            print self.ND_OA.shape
         elif type(self.rebin) == int:
             self.ND_OA = average(self.ND_OA, self.rebin)
 
@@ -180,9 +178,7 @@ class flux_fitter:
         
         FD /= FD_CV
         if type(self.rebin) == np.ndarray:
-            print FD.shape
             FD = average_by_bin_edge(FD, Ebins, self.rebin, axis = 1)
-            print FD.shape
         elif type(self.rebin) == int:
             FD = average(FD, self.rebin, axis = 1)
             
@@ -197,9 +193,7 @@ class flux_fitter:
 
         ND_OA /= ND_OA_CV
         if type(self.rebin) == np.ndarray:
-            print ND_OA.shape
             ND_OA = average_by_bin_edge(ND_OA, Ebins, self.rebin, axis = 1)
-            print ND_OA.shape
         elif type(self.rebin) == int:
             ND_OA = average(ND_OA, self.rebin, axis = 1)
 
@@ -308,12 +302,12 @@ class flux_fitter:
     def set_fit_region(self, energies = None, peaks = None):
         if energies:
             if not len(energies) == 2:
-                print "Energy bounds must be an iterable of length 2!"
+                print("Energy bounds must be an iterable of length 2!")
                 return
             self.Ebounds = energies
         elif peaks:
             if not len(peaks) == 2:
-                print "Peak indices must be an iterable of length 2!"
+                print("Peak indices must be an iterable of length 2!")
                 return
             else:
                 # this should be an odd integer
@@ -333,7 +327,7 @@ class flux_fitter:
                     self.Ebounds = (foundPeaks[-peaks[1]], max(self.Ebins))
                 else:
                     self.Ebounds = (foundPeaks[-peaks[1]], foundPeaks[-peaks[0]])
-                print "found peaks at ", self.Ebounds
+                print("found peaks at ", self.Ebounds)
     def set_OOR(self, weights):
         self.OutOfRegionFactors = weights
 
