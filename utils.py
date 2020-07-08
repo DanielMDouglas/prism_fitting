@@ -2,12 +2,13 @@ import numpy as np
 import scipy.stats as st
 from scipy.linalg import block_diag
 import matplotlib.pyplot as plt
+from matplotlib.widgets import Slider
 from ROOT import *
 
 def root_to_array(infileName, branchName, bins = []):
     infile = TFile(infileName)
     TH = infile.Get(branchName)
-    if not bins:
+    if not np.any(bins):
         shape = [TH.GetNbinsX(),
                  TH.GetNbinsY(),
                  TH.GetNbinsZ()]
@@ -242,3 +243,43 @@ def float_to_sci(thisFloat, digits = 2):
         exp = int(newStr[expBeg:expEnd])
         newExp = exp - shift
         return newStr[:expBeg] + str(newExp) + newStr[expEnd:]
+        
+
+from matplotlib.widgets import Slider
+
+
+class Sliderlog(Slider):
+
+    """Logarithmic slider.
+
+    Takes in every method and function of the matplotlib's slider.
+
+    Set slider to *val* visually so the slider still is linear but display 10**val next to the slider.
+
+    Return 10**val to the update function (func)"""
+
+    def set_val(self, val):
+
+        xy = self.poly.xy
+        # if self.orientation == 'vertical':
+        #     xy[1] = 0, val
+        #     xy[2] = 1, val
+        # else:
+        xy[2] = val, 1
+        xy[3] = val, 0
+        self.poly.xy = xy
+        # self.valtext.set_text(self.valfmt % 10**val)   # Modified to display 10**val instead of val
+        # self.valtext.set_text(float_to_sci(10**val))   # Modified to display 10**val instead of val
+        self.valtext.set_text("")   # Modified to display 10**val instead of val
+        if self.drawon:
+            self.ax.figure.canvas.draw_idle()
+        # self.val = val
+        # if not self.eventson:
+        #     return
+        # for cid, func in self.observers.items():
+        #         func(10**val)
+        self.val = 10**val
+        if not self.eventson:
+            return
+        for cid, func in self.observers.items():
+                func(10**val)

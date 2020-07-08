@@ -181,6 +181,186 @@ class fit_and_ratio_plot (plot):
                          self.legLabelList,
                          **self.legArgs)
 
+class fit_and_ratio_plot_with_sliders (plot):
+    def __init__(self, fitter = None, useTarget = True, useFit = True, title = None, Ebounds = True, regLims = [-12, -3], **kwargs):
+        from matplotlib.widgets import Slider, Button, RadioButtons
+        
+        bandBounds = (0.16, 0.84)
+
+        self.fig = plt.figure(figsize = (8.5, 6))
+        gs1 = GridSpec(2, 1,
+                       figure = self.fig,
+                       height_ratios = [0.7, 0.3],
+                       hspace = 0,
+                       top = 0.95,
+                       bottom = 0.22)
+        gs2 = GridSpec(3, 1,
+                       figure = self.fig,
+                       top = 0.15,
+                       bottom = 0.05)
+        self.axUp = self.fig.add_subplot(gs1[0, :])
+        self.axLo = self.fig.add_subplot(gs1[1, :])
+        self.axLoBoundSlider = self.fig.add_subplot(gs2[0, :])
+        self.axHiBoundSlider = self.fig.add_subplot(gs2[1, :])
+        self.axRegSlider = self.fig.add_subplot(gs2[2, :])
+        
+        self.legLineList = []
+        self.ratioLineList = []
+        self.legLabelList = []
+
+        self.legArgs = {"frameon": True,
+                        "loc": "upper right"}
+        if title:
+            self.legArgs.update({"title": title})
+            
+        if fitter:
+            if useTarget:
+                self.add_target(fitter, Ebounds)
+            if useFit:
+                self.add(fitter, **kwargs)
+            
+        self.axUp.set_xlim(0, 10)
+        self.axUp.set_xticklabels([])
+        self.axUp.grid(True, which = 'both')
+        self.axUp.set_ylabel(r'$\Phi$ [cm$^{-2}$ per POT per GeV]', labelpad = 15)
+
+        self.axLo.grid(True)
+        self.axLo.set_xlim(0, 10)
+        self.axLo.set_xlabel(r'$E_\nu$ [GeV]')
+        if "ylabel" in kwargs:
+            self.axLo.set_ylabel(kwargs["ylabel"], labelpad = 5)
+        else:
+            self.axLo.set_ylabel(r'$\frac{ND - FD (osc.)}{FD (unosc.)}$', labelpad = 5)
+        # self.axLo.set_ylim(-0.6, 0.6)
+        # self.axLo.set_yticks([-0.5, -0.25, 0, 0.25, 0.5])
+        # self.axLo.set_yticklabels(["-50\%", "-25\%", "0\%", "25\%", "50\%"])
+        self.axLo.set_ylim(-0.12, 0.12)
+        self.axLo.set_yticks([-0.5, -0.25, 0, 0.25, 0.50])
+        self.axLo.set_yticklabels(["-50\%", "-25\%", "0\%", "25\%", "50\%"])
+        self.axLo.grid(True, which = 'both')
+
+        # self.axRegSlider = plt.axes([0.1, 0.1, 0.65, 0.03])
+        self.regLims = regLims
+        self.sReg = Sliderlog(self.axRegSlider,
+                              r'$\lambda$',
+                              regLims[0], regLims[1],
+                              valinit = regLims[0])
+        ticks = range(regLims[0], regLims[1]+1)[::2]
+        self.axRegSlider.set_xticks(ticks)
+        self.axRegSlider.set_xticklabels([r'$10^{'+str(i)+r'}$' for i in ticks])
+
+        self.sLoBound = Slider(self.axLoBoundSlider,
+                               r'$E_{min}$',
+                               0, 10, valinit = 0)
+        self.sHiBound = Slider(self.axHiBoundSlider,
+                               r'$E_{max}$',
+                               0, 10, valinit = 10)
+        # self.axLoBoundSlider.set
+
+        self.fig.tight_layout()
+
+        self.full_flux = True
+
+    def add_target(self, fitter, label = None, full_flux = True,
+                   Ebounds = True, color = 'black', **kwargs):
+        self.full_flux = full_flux
+        if full_flux:
+            self.target = fitter.FD_oscillated
+        else:
+            self.target = fitter.target
+        targetNomLine, = self.axUp.plot(fitter.Ebins,
+                                        self.target,
+                                        color = color,
+                                        **kwargs)
+        # if not label:
+        #     label = ''.join([r'FD ',
+        #                      LaTeXflavor[fitter.FDfromFlavor],
+        #                      r' $\rightarrow$ ',
+        #                      LaTeXflavor[fitter.FDtoFlavor]])
+        if label:
+            self.legLineList.append(targetNomLine)
+            self.legLabelList.append(label)
+
+        if Ebounds:
+            self.loBoundLineUp = self.axUp.axvline(x = fitter.Ebounds[0],
+                                                   ls = '--',
+                                                   color = 'red')
+            self.hiBoundLineUp = self.axUp.axvline(x = fitter.Ebounds[1],
+                                                   ls = '--',
+                                                   color = 'red')
+            # self.loBoundArrowUp = self.axUp.arrow(fitter.Ebounds[0], 3.85e-16,
+            #                                       0.15, 0,
+            #                                       width = 2.e-18,
+            #                                       head_length = 0.05,
+            #                                       color = 'red')
+            # self.hiBoundArrowUp = self.axUp.arrow(fitter.Ebounds[1], 0.35e-16,
+            #                                       -0.15, 0,
+            #                                       width = 2.e-18,
+            #                                       head_length = 0.05,
+            #                                       color = 'red')
+        
+            self.loBoundLineDown = self.axLo.axvline(x = fitter.Ebounds[0],
+                                                     ls = '--',
+                                                     color = 'red')
+            self.hiBoundLineDown = self.axLo.axvline(x = fitter.Ebounds[1],
+                                                     ls = '--',
+                                                     color = 'red')
+
+        self.axUp.set_ylim(-0.2*np.max(self.target),
+                           1.2*np.max(self.target))
+        
+        self.axUp.legend(self.legLineList,
+                         self.legLabelList,
+                         **self.legArgs)
+        
+    def add(self, fitter, label = None, color = None, **kwargs):
+        NDNomLine, = self.axUp.plot(fitter.Ebins,
+                                    np.dot(fitter.ND_full, fitter.c),
+                                    color = color,
+                                    **kwargs)
+        self.legLineList.append(NDNomLine)
+        
+        if not label:
+            self.legLabelList.append(r'Fluxes up to ' + str(fitter.maxOA) + r'm')
+        else:
+            self.legLabelList.append(label)
+
+        if self.full_flux:
+            target = fitter.FD_oscillated
+            # denom = fitter.FD_oscillated
+            denom = fitter.FD_unoscillated
+        else:
+            target = self.target
+            denom = self.target
+        RatioLine, = self.axLo.plot(fitter.Ebins,
+                                    (np.dot(fitter.ND_full, fitter.c) - target)/denom,
+                                    color = color)
+        self.ratioLineList.append(RatioLine)
+        
+        self.axUp.legend(self.legLineList,
+                         self.legLabelList,
+                         **self.legArgs)
+
+        def update(val):
+            reg = self.sReg.val
+            loBound = self.sLoBound.val
+            hiBound = self.sHiBound.val
+            fitter.set_fit_region(energies = (loBound, hiBound))
+            fitter.calc_coeffs(reg, reg)
+            self.legLineList[-1].set_ydata(np.dot(fitter.ND_full, fitter.c))
+            self.ratioLineList[-1].set_ydata((np.dot(fitter.ND_full, fitter.c) - target)/denom)
+            self.loBoundLineUp.set_xdata([loBound, loBound])
+            self.loBoundLineDown.set_xdata([loBound, loBound])
+            self.hiBoundLineUp.set_xdata([hiBound, hiBound])
+            self.hiBoundLineDown.set_xdata([hiBound, hiBound])
+            
+            self.fig.canvas.draw_idle()
+
+        self.sReg.on_changed(update)
+        self.sLoBound.on_changed(update)
+        self.sHiBound.on_changed(update)
+
+
 class coeff_plot (plot):
     def __init__(self, fitter = None, title = "Coefficients", HC = True, legend = True, **kwargs):
         self.fig = plt.figure()
