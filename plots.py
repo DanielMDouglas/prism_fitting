@@ -212,7 +212,8 @@ class fit_and_ratio_plot_with_sliders (plot):
                         "loc": "upper right"}
         if title:
             self.legArgs.update({"title": title})
-            
+
+        self.fitters = []
         if fitter:
             if useTarget:
                 self.add_target(fitter, Ebounds)
@@ -255,6 +256,11 @@ class fit_and_ratio_plot_with_sliders (plot):
         self.sHiBound = Slider(self.axHiBoundSlider,
                                r'$E_{max}$',
                                0, 10, valinit = 10)
+
+        self.sReg.on_changed(self.update)
+        self.sLoBound.on_changed(self.update)
+        self.sHiBound.on_changed(self.update)
+
         # self.axLoBoundSlider.set
 
         self.fig.tight_layout()
@@ -314,6 +320,8 @@ class fit_and_ratio_plot_with_sliders (plot):
                          **self.legArgs)
         
     def add(self, fitter, label = None, color = None, **kwargs):
+        self.fitters.append(fitter)
+        
         NDNomLine, = self.axUp.plot(fitter.Ebins,
                                     np.dot(fitter.ND_full, fitter.c),
                                     color = color,
@@ -341,24 +349,29 @@ class fit_and_ratio_plot_with_sliders (plot):
                          self.legLabelList,
                          **self.legArgs)
 
-        def update(val):
-            reg = self.sReg.val
-            loBound = self.sLoBound.val
-            hiBound = self.sHiBound.val
+    def update(self, val):
+        reg = self.sReg.val
+        loBound = self.sLoBound.val
+        hiBound = self.sHiBound.val
+        for i, fitter in enumerate(self.fitters):
+            if self.full_flux:
+                target = fitter.FD_oscillated
+                # denom = fitter.FD_oscillated
+                denom = fitter.FD_unoscillated
+            else:
+                target = self.target
+                denom = self.target
+
             fitter.set_fit_region(energies = (loBound, hiBound))
             fitter.calc_coeffs(reg, reg)
-            self.legLineList[-1].set_ydata(np.dot(fitter.ND_full, fitter.c))
-            self.ratioLineList[-1].set_ydata((np.dot(fitter.ND_full, fitter.c) - target)/denom)
-            self.loBoundLineUp.set_xdata([loBound, loBound])
-            self.loBoundLineDown.set_xdata([loBound, loBound])
-            self.hiBoundLineUp.set_xdata([hiBound, hiBound])
-            self.hiBoundLineDown.set_xdata([hiBound, hiBound])
+            self.legLineList[i+1].set_ydata(np.dot(fitter.ND_full, fitter.c))
+            self.ratioLineList[i].set_ydata((np.dot(fitter.ND_full, fitter.c) - target)/denom)
+        # self.loBoundLineUp.set_xdata([loBound, loBound])
+        # self.loBoundLineDown.set_xdata([loBound, loBound])
+        # self.hiBoundLineUp.set_xdata([hiBound, hiBound])
+        # self.hiBoundLineDown.set_xdata([hiBound, hiBound])
             
-            self.fig.canvas.draw_idle()
-
-        self.sReg.on_changed(update)
-        self.sLoBound.on_changed(update)
-        self.sHiBound.on_changed(update)
+        self.fig.canvas.draw_idle()
 
 
 class coeff_plot (plot):
