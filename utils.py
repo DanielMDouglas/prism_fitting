@@ -5,38 +5,31 @@ import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider
 from ROOT import *
 
-def root_to_array(infileName, branchName, bins = []):
+def root_to_array(infileName, branchName, binEdges = []):
     infile = TFile(infileName)
     TH = infile.Get(branchName)
-    if not np.any(bins):
-        shape = [TH.GetNbinsX(),
-                 TH.GetNbinsY(),
-                 TH.GetNbinsZ()]
-        con = np.ndarray(shape)
-        err = np.ndarray(shape)
-        for i in xrange(shape[0]):
-            for j in xrange(shape[1]):
-                for k in xrange(shape[2]):
-                    con[i,j,k] = TH.GetBinContent(i+1, j+1, k+1)
-                    err[i,j,k] = TH.GetBinError(i+1, j+1, k+1)
-    else:
-        axes = [axis for axis in bins]
-        # force the hist to be 3 dimensional (reduce later)
-        axes = axes + [[0]]*(3 - len(axes))
-        
-        shape = [len(axis) for axis in bins]
-        shape = shape + [1]*(3 - len(shape))
-
-        con = np.ndarray(shape)
-        err = np.ndarray(shape)
-        for i, xi in enumerate(axes[0]):
-            for j, yj in enumerate(axes[1]):
-                for k, zk in enumerate(axes[2]):
-                    con[i, j, k] = TH.GetBinContent(TH.FindBin(xi, yj, zk))
-                    err[i, j, k] = TH.GetBinError(TH.FindBin(xi, yj, zk))
-
+    shape = [TH.GetNbinsX(),
+             TH.GetNbinsY(),
+             TH.GetNbinsZ()]
+    con = np.ndarray(shape)
+    err = np.ndarray(shape)
+    for i in xrange(shape[0]):
+        for j in xrange(shape[1]):
+            for k in xrange(shape[2]):
+                con[i,j,k] = TH.GetBinContent(i+1, j+1, k+1)
+                err[i,j,k] = TH.GetBinError(i+1, j+1, k+1)
     infile.Close()
-    return con.squeeze(), err.squeeze()
+    con = con.squeeze()
+    err = err.squeeze()
+
+    if list(binEdges):
+        oldBins = list(root_to_axes(infileName, branchName))
+
+        for axis, theseBinEdges in enumerate(binEdges):
+            con = average_by_bin_edge(con, oldBins[axis], theseBinEdges, axis = axis)
+            err = average_by_bin_edge(err, oldBins[axis], theseBinEdges, axis = axis)
+
+    return con, err
 
 
 def tgraph_to_array(infileName, branchName, bins):
@@ -66,8 +59,12 @@ def root_to_axes(infileName, branchName, where = 'mid'):
         xBins = np.array([axes[0].GetBinLowEdge(i+1) for i in range(shape[0])])
         yBins = np.array([axes[1].GetBinLowEdge(i+1) for i in range(shape[1])])
         zBins = np.array([axes[2].GetBinLowEdge(i+1) for i in range(shape[2])])
+    elif where == 'post':
+        xBins = np.array([axes[0].GetBinUpEdge(i+1) for i in range(shape[0])])
+        yBins = np.array([axes[1].GetBinUpEdge(i+1) for i in range(shape[1])])
+        zBins = np.array([axes[2].GetBinUpEdge(i+1) for i in range(shape[2])])
     else:
-        print("options are 'mid' and 'pre'")
+        print("options are 'mid', 'pre', and 'post'")
         return
     
     return (xBins, yBins, zBins)
@@ -179,8 +176,8 @@ def average_by_bin_edge(oldHist, oldBinCenters, newBinEdges, axis = 0):
     rebinned = rebin_by_bin_edge(oldHist, oldBinCenters, newBinEdges, axis = axis)
     binWidths = np.ndarray((rebinned.shape[axis]))
     for i, (leftEdge, rightEdge) in enumerate(zip(newBinEdges[:-1], newBinEdges[1:])):
-        nInside = np.sum(np.logical_and(leftEdge <= oldBinCenters,
-                                        oldBinCenters < rightEdge),
+        nInside = np.sum(np.logical_and(leftEdge < oldBinCenters,
+                                        oldBinCenters <= rightEdge),
                          dtype = float)
         rebinned[i] /= nInside
     return rebinned

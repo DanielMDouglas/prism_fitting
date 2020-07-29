@@ -6,8 +6,8 @@ class flux:
     def __init__(self, infileName, branchName):
         self.infileName = infileName
         self.branchName = branchName
-    def load(self, bins = []):
-        content, stat = root_to_array(self.infileName, self.branchName, bins = bins)
+    def load(self, **kwargs):
+        content, stat = root_to_array(self.infileName, self.branchName, **kwargs)
         return content
 
 # Everything from here on depends on the tree structure
@@ -233,3 +233,9 @@ FD_other_shifts = {mode: {flavor: {key: flux(systFileName,
 # but this is not always the case!
 
 Ebins, OAbins, zbins = root_to_axes(nomFileName, "ND_nu_ppfx/LBNF_numu_flux_Nom")
+
+EbinLowEdges, OAbinLowEdges, zbinLowEdges = root_to_axes(nomFileName, "ND_nu_ppfx/LBNF_numu_flux_Nom", where = 'pre')
+EbinUpEdges, OAbinUpEdges, zbinUpEdges = root_to_axes(nomFileName, "ND_nu_ppfx/LBNF_numu_flux_Nom", where = 'post')
+
+EbinEdges = np.concatenate([EbinLowEdges, EbinUpEdges[-1:]])
+OAbinEdges = np.concatenate([OAbinLowEdges, OAbinUpEdges[-1:]])
