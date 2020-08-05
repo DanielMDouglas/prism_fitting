@@ -37,6 +37,9 @@ if __name__ == '__main__':
     fp = FD_flux_plot(fitter,
                       label = r'$\nu_\mu \rightarrow \nu_\mu$')
 
+    rp = FD_rate_plot(fitter, style = 'errorband')
+    rp.add_fit(fitter)
+    
     # plot some ND fluxes at various off-axis positions
     # These are specified by the index (50cm windows from 0 to 33m) 
     ND_flux_slice_plot(fitter,

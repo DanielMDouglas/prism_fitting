@@ -97,7 +97,7 @@ class flux_fitter:
         self.FD_oscillated = self.FD_unoscillated*self.Posc
         self.target = self.FD_oscillated
 
-        self.FD_rate = self.FD_oscillated*FDscale*self.FDxSec
+        self.FD_rate = FDscale*self.FD_oscillated*self.FDxSec
         self.FD_rate_statErr = np.sqrt(self.FD_rate)
 
     def load_ND_OA_nom(self):
@@ -107,7 +107,7 @@ class flux_fitter:
         flux = ND_nominal[self.beamMode][self.NDflavor]
         self.ND_OA = flux.load(binEdges = [self.EbinEdges, self.OAbinEdges])
 
-        self.ND_OA_rate = (self.ND_OA.T*NDscale*self.NDxSec).T
+        self.ND_OA_rate = NDscale*(self.ND_OA.T*self.NDxSec).T
         self.ND_OA_rate_statErr = np.sqrt(self.ND_OA_rate)
         
         if "ND_HC" in dir(self):
@@ -125,7 +125,7 @@ class flux_fitter:
         else:
             self.ND_HC = np.ndarray((len(self.Ebins), 0))
             
-        self.ND_HC_rate = (self.ND_HC.T*NDscale*self.NDxSec).T
+        self.ND_HC_rate = NDscale*(self.ND_HC.T*self.NDxSec).T
         self.ND_HC_rate_statErr = np.sqrt(self.ND_HC_rate)
 
         if "ND_OA" in dir(self):
@@ -385,8 +385,8 @@ class flux_fitter:
         self.cHC = self.c[nBinsOA:]
 
         self.fluxPred = np.dot(self.ND, self.c)
-        self.ratePred = np.dot(self.ND_rate, self.c)
-        self.ratePred_statErr = np.sqrt(np.dot(self.ND_rate, np.power(self.c, 2)))
+        self.ratePred = NDtoFD*np.dot(self.ND_rate, self.c)
+        self.ratePred_statErr = NDtoFD*np.sqrt(np.dot(self.ND_rate, np.power(self.c, 2)))
         
     def calc_coeffs_DFT(self, OAreg, HCreg, filt, ND = [None], target = [None], fluxTimesE = False):
         if not np.any(ND):

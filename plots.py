@@ -60,7 +60,13 @@ class plot (object):
         elif self.style == "step":
             return ax.step(*args, where = 'mid', **kwargs)
         elif self.style == "errorbar":
-            return ax.errorbar(*args, **kwargs)
+            return ax.errorbar(*args, **kwargs), 
+        elif self.style == "errorband":
+            lower = args[1] - kwargs["yerr"]
+            upper = args[1] + kwargs["yerr"]
+            band = ax.fill_between(args[0], lower, upper, alpha = 0.5)
+            return ax.plot(*args)
+            
  
 class fit_and_ratio_plot (plot):
     def __init__(self, fitter = None, useTarget = True,
@@ -166,7 +172,7 @@ class fit_and_ratio_plot (plot):
     def add(self, fitter, label = None, color = None, **kwargs):
         NDNomLine, = self.plot(self.axUp,
                                fitter.Ebins,
-                               np.dot(fitter.ND, fitter.c),
+                               fitter.fluxPred,
                                color = color,
                                **kwargs)
         self.legLineList.append(NDNomLine)
@@ -185,7 +191,7 @@ class fit_and_ratio_plot (plot):
             denom = self.target
         self.plot(self.axLo,
                   fitter.Ebins,
-                  (np.dot(fitter.ND, fitter.c) - target)/denom,
+                  (fitter.fluxPred - target)/denom,
                   color = NDNomLine.get_color())
         
         self.axUp.legend(self.legLineList,
@@ -337,7 +343,7 @@ class fit_and_ratio_plot_with_sliders (plot):
         
         NDNomLine, = self.plot(self.axUp,
                                fitter.Ebins,
-                               np.dot(fitter.ND, fitter.c),
+                               fitter.fluxPred,
                                **kwargs)
         self.legLineList.append(NDNomLine)
         
@@ -355,7 +361,7 @@ class fit_and_ratio_plot_with_sliders (plot):
             denom = self.target
         RatioLine, = self.plot(self.axLo,
                                fitter.Ebins,
-                               (np.dot(fitter.ND, fitter.c) - target)/denom,
+                               (fitter.fluxPred - target)/denom,
                                **kwargs)
         self.ratioLineList.append(RatioLine)
         
@@ -378,8 +384,8 @@ class fit_and_ratio_plot_with_sliders (plot):
 
             fitter.set_fit_region(energies = (loBound, hiBound))
             fitter.calc_coeffs(reg, reg)
-            self.legLineList[i+1].set_ydata(np.dot(fitter.ND, fitter.c))
-            self.ratioLineList[i].set_ydata((np.dot(fitter.ND, fitter.c) - target)/denom)
+            self.legLineList[i+1].set_ydata(fitter.fluxPred)
+            self.ratioLineList[i].set_ydata((fitter.fluxPred - target)/denom)
         # self.loBoundLineUp.set_xdata([loBound, loBound])
         # self.loBoundLineDown.set_xdata([loBound, loBound])
         # self.hiBoundLineUp.set_xdata([hiBound, hiBound])
@@ -592,7 +598,7 @@ class slider_super_plot (plot):
     def addFit(self, fitter, color, label, **kwargs):
         NDNomLine, = self.plot(self.axFit,
                                fitter.Ebins,
-                               np.dot(fitter.ND, fitter.c),
+                               fitter.fluxPred,
                                color = color,
                                **kwargs)
         self.legLineList.append(NDNomLine)
@@ -612,7 +618,7 @@ class slider_super_plot (plot):
             denom = self.target
         RatioLine, = self.plot(self.axRatio,
                                fitter.Ebins,
-                               (np.dot(fitter.ND, fitter.c) - target)/denom,
+                               (fitter.fluxPred - target)/denom,
                                color = color)
         self.ratioLineList.append(RatioLine)
         
@@ -686,8 +692,8 @@ class slider_super_plot (plot):
 
             fitter.set_fit_region(energies = (loBound, hiBound))
             fitter.calc_coeffs(reg, reg)
-            self.legLineList[i+1].set_ydata(np.dot(fitter.ND, fitter.c))
-            self.ratioLineList[i].set_ydata((np.dot(fitter.ND, fitter.c) - target)/denom)
+            self.legLineList[i+1].set_ydata(fitter.fluxPred)
+            self.ratioLineList[i].set_ydata((fitter.fluxPred - target)/denom)
             self.OAcoeffLineList[i].set_ydata(fitter.cOA)
             self.HCcoeffLineList[i].set_offsets(np.array([fitter.HCbins, fitter.cHC]).T)
 
@@ -713,8 +719,8 @@ class slider_super_plot (plot):
 
             fitter.set_fit_region(energies = (loBound, hiBound))
             fitter.calc_coeffs(reg, reg)
-            self.legLineList[i+1].set_ydata(np.dot(fitter.ND, fitter.c))
-            self.ratioLineList[i].set_ydata((np.dot(fitter.ND, fitter.c) - target)/denom)
+            self.legLineList[i+1].set_ydata(fitter.fluxPred)
+            self.ratioLineList[i].set_ydata((fitter.fluxPred - target)/denom)
             self.OAcoeffLineList[i].set_ydata(fitter.cOA)
             self.HCcoeffLineList[i].set_offsets(np.array([fitter.HCbins, fitter.cHC]).T)
 
@@ -929,11 +935,12 @@ class FD_flux_plot (plot):
                                  alpha = 0.5,
                                  color = color)
             
-        line = self.ax.plot(fitter.Ebins,
-                            fitter.FD_oscillated,
-                            color = color)
+        line, = self.plot(self.ax,
+                          fitter.Ebins,
+                          fitter.FD_oscillated,
+                          color = color)
         
-        self.legLineList.append(line[0])
+        self.legLineList.append(line)
         
         if self.legendOn:
             self.ax.legend(self.legLineList,
@@ -956,11 +963,12 @@ class FD_flux_plot (plot):
                                  alpha = 0.5,
                                  color = color)
             
-        line = self.ax.plot(fitter.Ebins,
-                            fitter.FD_unoscillated,
-                            color = color)
+        line, = self.plot(self.ax,
+                          fitter.Ebins,
+                          fitter.FD_unoscillated,
+                          color = color)
         
-        self.legLineList.append(line[0])
+        self.legLineList.append(line)
         
         if self.legendOn:
             self.ax.legend(self.legLineList,
@@ -973,10 +981,84 @@ class FD_flux_plot (plot):
         return line
          
     def add_fit(self, fitter, color = None, linestyle = None, label = r'ND Flux Match'):
-        line, = self.ax.plot(fitter.Ebins,
-                             np.dot(fitter.ND, fitter.c),
-                             color = color,
-                             linestyle = linestyle)
+        line = self.plot(self.ax,
+                         fitter.Ebins,
+                         fitter.fluxPred,
+                         color = color,
+                         linestyle = linestyle)
+        self.legLineList.append(line)
+        self.legLabelList.append(label)
+        
+        if self.legendOn:
+            self.ax.legend(self.legLineList,
+                           self.legLabelList,
+                           **self.legArgs)
+
+        return line
+            
+class FD_rate_plot (plot):
+    def __init__(self, fitter = None, title = "FD Event Rate", aspect = None, figSize = (6.4, 4.8), legendOn = True, style = "step", **kwargs):
+        super(FD_rate_plot, self).__init__(style = style, **kwargs)
+
+        self.fig = plt.figure(figsize = figSize)
+        self.ax = self.fig.gca()
+
+        self.legendOn = legendOn
+
+        self.legLabelList = []
+        self.legLineList = []
+
+        self.legArgs = {"frameon": False}
+        if "legCols" in kwargs:
+            self.legArgs.update({"ncol": kwargs["legCols"]})
+        if "xlim" in kwargs:
+            self.ax.set_xlim(*kwargs["xlim"])
+        else:
+            self.ax.set_xlim(0, 10)
+        if "ymax" in kwargs:
+            self.ymax = kwargs["ymax"]
+        else:
+            self.ymax = 0
+
+        if fitter:
+             self.add(fitter, **kwargs)
+
+        self.ax.set_xlabel(r'$E_\nu$ [GeV]')
+        self.ax.set_ylabel(r'$\Phi$ [cm$^{-2}$ per POT per GeV]')
+
+        self.ax.set_title(title)
+
+        # self.ax.grid()
+        self.ax.set_title(title)
+        self.fig.tight_layout()
+     
+    def add(self, fitter, label = "FD Event Rate", **kwargs):
+        self.legLabelList.append(label)
+            
+        line, = self.plot(self.ax,
+                          fitter.Ebins,
+                          fitter.FD_rate,
+                          yerr = fitter.FD_rate_statErr,
+                          **kwargs)
+        
+        self.legLineList.append(line)
+        
+        if self.legendOn:
+            self.ax.legend(self.legLineList,
+                           self.legLabelList,
+                           **self.legArgs)
+        
+        self.ymax = max(self.ymax, 1.2*np.max(fitter.FD_rate))
+        self.ax.set_ylim(0, self.ymax)
+
+        return line
+
+    def add_fit(self, fitter, label = r'ND Match', **kwargs):
+        line = self.plot(self.ax,
+                          fitter.Ebins,
+                          fitter.ratePred,
+                          yerr = fitter.ratePred_statErr,
+                          **kwargs)
         self.legLineList.append(line)
         self.legLabelList.append(label)
         
@@ -1067,7 +1149,7 @@ class FD_flux_osc_and_unosc_plot (plot):
 
     def add_fit(self, fitter, color = None):
         fitLine, = self.ax.plot(fitter.Ebins,
-                                np.dot(fitter.ND, fitter.c),
+                                fitter.fluxPred,
                                 color = color)
         self.legLineList.append(fitLine)
         self.legLabelList.append(r'ND Flux Match')
@@ -1121,7 +1203,7 @@ class mike_plot (plot):
             var_target = fitter.FD_unosc_other_univs[varKey]*fitter.Posc
             ND_univ = fitter.ND_other_univs[varKey]
 
-        ND = (np.dot(ND_univ, fitter.c) - np.dot(fitter.ND, fitter.c))/fitter.FD_unoscillated
+        ND = (np.dot(ND_univ, fitter.c) - fitter.fluxPred)/fitter.FD_unoscillated
         FD = (var_target - fitter.target)/fitter.FD_unoscillated
         if np.any(self.binEdges):
             binCenters = average_by_bin_edge(fitter.Ebins, fitter.Ebins, self.binEdges)
