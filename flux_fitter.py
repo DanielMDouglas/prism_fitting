@@ -1,5 +1,6 @@
 from utils import *
 from fluxes import *
+from xSec import *
 from oscProbs import *
 
 import matplotlib
@@ -65,6 +66,9 @@ class flux_fitter:
         else:
             self.Posc = oscParam.load(self.Ebins)
             
+        # load cross sections
+        self.load_xSec()
+
         # load nominal fluxes
         self.load_nom()
 
@@ -76,6 +80,13 @@ class flux_fitter:
         self.ppfx_systs_loaded = False
         self.other_systs_loaded = False
 
+    def load_xSec(self):
+        """
+        Load cross sections for the set flavors
+        """
+        self.NDxSec = xSec[self.NDflavor]["total"].load(binEdges = [self.EbinEdges])
+        self.FDxSec = xSec[self.FDtoFlavor]["total"].load(binEdges = [self.EbinEdges])
+        
     def load_FD_nom(self):
         """
         Load the nominal far detector flux and update the FD_oscillated and target 
@@ -86,6 +97,9 @@ class flux_fitter:
         self.FD_oscillated = self.FD_unoscillated*self.Posc
         self.target = self.FD_oscillated
 
+        self.FD_rate = self.FD_oscillated*FDscale*self.FDxSec
+        self.FD_rate_statErr = np.sqrt(self.FD_rate)
+
     def load_ND_OA_nom(self):
         """
         Load the nominal near detector flux for off-axis positions at 293 kA
@@ -93,8 +107,13 @@ class flux_fitter:
         flux = ND_nominal[self.beamMode][self.NDflavor]
         self.ND_OA = flux.load(binEdges = [self.EbinEdges, self.OAbinEdges])
 
+        self.ND_OA_rate = (self.ND_OA.T*NDscale*self.NDxSec).T
+        self.ND_OA_rate_statErr = np.sqrt(self.ND_OA_rate)
+        
         if "ND_HC" in dir(self):
             self.ND = np.concatenate((self.ND_OA, self.ND_HC), axis = 1)
+            self.ND_rate = np.concatenate((self.ND_OA_rate, self.ND_HC_rate), axis = 1)
+            self.ND_rate_statErr = np.concatenate((self.ND_OA_rate_statErr, self.ND_HC_rate_statErr), axis = 1)
             
     def load_ND_HC_nom(self):
         """
@@ -106,8 +125,13 @@ class flux_fitter:
         else:
             self.ND_HC = np.ndarray((len(self.Ebins), 0))
             
+        self.ND_HC_rate = (self.ND_HC.T*NDscale*self.NDxSec).T
+        self.ND_HC_rate_statErr = np.sqrt(self.ND_HC_rate)
+
         if "ND_OA" in dir(self):
             self.ND = np.concatenate((self.ND_OA, self.ND_HC), axis = 1)
+            self.ND_rate = np.concatenate((self.ND_OA_rate, self.ND_HC_rate), axis = 1)
+            self.ND_rate_statErr = np.concatenate((self.ND_OA_rate_statErr, self.ND_HC_rate_statErr), axis = 1)
             
     def load_nom(self):
         """
@@ -359,6 +383,10 @@ class flux_fitter:
         self.c = np.array(np.dot(RHS, LHS.I)).squeeze()
         self.cOA = self.c[:nBinsOA]
         self.cHC = self.c[nBinsOA:]
+
+        self.fluxPred = np.dot(self.ND, self.c)
+        self.ratePred = np.dot(self.ND_rate, self.c)
+        self.ratePred_statErr = np.sqrt(np.dot(self.ND_rate, np.power(self.c, 2)))
         
     def calc_coeffs_DFT(self, OAreg, HCreg, filt, ND = [None], target = [None], fluxTimesE = False):
         if not np.any(ND):
@@ -406,6 +434,10 @@ class flux_fitter:
         self.cOA = self.c[:nBinsOA]
         self.cHC = self.c[nBinsOA:]
 
+        self.fluxPred = np.dot(self.ND, self.c)
+        self.ratePred = np.dot(self.ND_rate, self.c)
+        self.ratePred_statErr = np.sqrt(np.dot(self.ND_rate, np.power(self.c, 2)))
+
     def calc_var_coeff_correction(self, reg, fluxTimesE = False):
         """
         Calculate a correction to the nominal coefficients to minimize the variance of the residual
@@ -449,7 +481,11 @@ class flux_fitter:
         self.c += deltac
         self.cOA = self.c[:nBinsOA]
         self.cHC = self.c[nBinsOA:]
-        
+
+        self.fluxPred = np.dot(self.ND, self.c)
+        self.ratePred = np.dot(self.ND_rate, self.c)
+        self.ratePred_statErr = np.sqrt(np.dot(self.ND_rate, np.power(self.c, 2)))
+
     def compressed_sensing(self, diag = [None], reg = 1.e-9, ND = None, target = None):
         if not ND:
             ND = self.ND
@@ -478,6 +514,10 @@ class flux_fitter:
         RHS = np.dot(np.matmul(NDmatr.T, P), target)
 
         self.c = np.array(np.dot(RHS, LHS.I)).squeeze()
+
+        self.fluxPred = np.dot(self.ND, self.c)
+        self.ratePred = np.dot(self.ND_rate, self.c)
+        self.ratePred_statErr = np.sqrt(np.dot(self.ND_rate, np.power(self.c, 2)))
 
     def residual_norm(self, P = None, ND = None, target = None, **kwargs):
         if not np.any(P):

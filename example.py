@@ -19,7 +19,7 @@ if __name__ == '__main__':
                          "numu",
                          oscParam = osc_hyp,
                          useHC = False,
-                         Erebin = 5)
+                         Erebin = 10)
     fitter.set_maxOA(33.)
     
     # we want to fit between the first and fourth highest energy peaks
@@ -65,7 +65,7 @@ if __name__ == '__main__':
                            "numu",
                            oscParam = osc_hyp,
                            useHC = True,
-                           Erebin = 5)
+                           Erebin = 10)
     # configure it similarly to the first fitter
     HCfitter.set_maxOA(33.)
     HCfitter.use_currents([280])

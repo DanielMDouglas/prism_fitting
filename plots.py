@@ -61,7 +61,7 @@ class plot (object):
             return ax.step(*args, where = 'mid', **kwargs)
         elif self.style == "errorbar":
             return ax.errorbar(*args, **kwargs)
-            
+ 
 class fit_and_ratio_plot (plot):
     def __init__(self, fitter = None, useTarget = True,
                  useFit = True, title = None, Ebounds = True,
@@ -101,9 +101,6 @@ class fit_and_ratio_plot (plot):
         else:
             self.axLo.set_ylabel(r'$\frac{ND - FD (osc.)}{FD (unosc.)}$', labelpad = 5)
         
-        # self.axLo.set_yticks([-0.5, -0.25, 0, 0.25, 0.5])
-        # self.axLo.set_yticklabels(["-50\%", "-25\%", "0\%", "25\%", "50\%"])
-        # self.axLo.set_ylim(-0.12, 0.12)
         self.axLo.set_ylim(-0.06, 0.06)
         self.axLo.set_yticks([-0.04, -0.02, 0, 0.02, 0.04])
         self.axLo.set_yticklabels(["-4\%", "-2\%", "0\%", "2\%", "4\%"])
