@@ -43,7 +43,7 @@ if __name__ == '__main__':
                        slices = [0, 10, 20, 30, 40, 50])
     
     # create a new fit and ratio plot
-    fitPlot = fit_and_ratio_plot_with_sliders()
+    fitPlot = fit_and_ratio_plot(style = "step")
     # add the fitter's target to this plot
     fitPlot.add_target(fitter,
                        label = r'FD $\nu_\mu \rightarrow \nu_\mu$',
@@ -51,7 +51,8 @@ if __name__ == '__main__':
     # add the fit to this plot
     fitPlot.add(fitter,
                 label = r'Off-axis Only')
-
+    plt.show()
+    
     # create a new coefficient plot
     coeffPlot = coeff_plot(HC = True)
     # add the fitter's coefficients

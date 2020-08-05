@@ -158,8 +158,8 @@ def rebin_by_bin_edge(oldHist, oldBinCenters, newBinEdges, axis = 0):
     newHist = np.ndarray(newShape)
     if axis == 0:
         for i, (leftEdge, rightEdge) in enumerate(zip(newBinEdges[:-1], newBinEdges[1:])):
-            newHist[i] = np.sum(oldHist[np.logical_and(leftEdge <= oldBinCenters,
-                                                       oldBinCenters < rightEdge)],
+            newHist[i] = np.sum(oldHist[np.logical_and(leftEdge < oldBinCenters,
+                                                       oldBinCenters <= rightEdge)],
                                 axis = axis)
         return newHist
     elif axis == 1:
@@ -174,7 +174,7 @@ def average(oldHist, rebinF, **kwargs):
 
 def average_by_bin_edge(oldHist, oldBinCenters, newBinEdges, axis = 0):
     rebinned = rebin_by_bin_edge(oldHist, oldBinCenters, newBinEdges, axis = axis)
-    binWidths = np.ndarray((rebinned.shape[axis]))
+    # binWidths = np.ndarray((rebinned.shape[axis]))
     for i, (leftEdge, rightEdge) in enumerate(zip(newBinEdges[:-1], newBinEdges[1:])):
         nInside = np.sum(np.logical_and(leftEdge < oldBinCenters,
                                         oldBinCenters <= rightEdge),

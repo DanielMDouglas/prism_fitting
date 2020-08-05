@@ -94,9 +94,8 @@ class flux_fitter:
         self.ND_OA = flux.load(binEdges = [self.EbinEdges, self.OAbinEdges])
 
         if "ND_HC" in dir(self):
-            self.ND_full = np.concatenate((self.ND_OA, self.ND_HC), axis = 1)
-            self.ND = self.ND_full
-        
+            self.ND = np.concatenate((self.ND_OA, self.ND_HC), axis = 1)
+            
     def load_ND_HC_nom(self):
         """
         Load the nominal near detector flux for all alternative horn currents
@@ -108,9 +107,8 @@ class flux_fitter:
             self.ND_HC = np.ndarray((len(self.Ebins), 0))
             
         if "ND_OA" in dir(self):
-            self.ND_full = np.concatenate((self.ND_OA, self.ND_HC), axis = 1)
-            self.ND = self.ND_full
-
+            self.ND = np.concatenate((self.ND_OA, self.ND_HC), axis = 1)
+            
     def load_nom(self):
         """
         Load all nominal fluxes
@@ -326,7 +324,7 @@ class flux_fitter:
             
     def calc_coeffs(self, OAreg, HCreg, ND = [None], target = [None], fluxTimesE = False, **kwargs):
         if not np.any(ND):
-            ND = self.ND_full
+            ND = self.ND
         if not np.any(target):
             target = self.target
         if fluxTimesE:
@@ -364,7 +362,7 @@ class flux_fitter:
         
     def calc_coeffs_DFT(self, OAreg, HCreg, filt, ND = [None], target = [None], fluxTimesE = False):
         if not np.any(ND):
-            ND = self.ND_full
+            ND = self.ND
         if not np.any(target):
             target = self.target
         if fluxTimesE:
@@ -385,7 +383,6 @@ class flux_fitter:
         from scipy.linalg import dft
         # OA_penalty = np.diag(filt)*dft(nBinsOA) + OAreg*(np.diag(nBinsOA*[1]) - np.diag((nBinsOA - 1)*[1], k = 1))
         OA_penalty = np.diag(filt)*dft(nBinsOA) + OAreg*(np.diag(nBinsOA*[1]) - np.diag((nBinsOA - 1)*[1], k = 1))
-        # print np.diag(filt)*dft(nBinsOA)
         HC_penalty = np.eye(nBinsHC)
         self.A = block_diag(OA_penalty, HC_penalty)
         # Gamma = block_diag(OAreg*OA_penalty, HCreg*HC_penalty)
@@ -414,7 +411,7 @@ class flux_fitter:
         Calculate a correction to the nominal coefficients to minimize the variance of the residual
         over different systematic universes
         """
-        ND = np.concatenate((self.ND_full,) + tuple(ND for ND in self.ND_ppfx_univs))
+        ND = np.concatenate((self.ND,) + tuple(ND for ND in self.ND_ppfx_univs))
         target = np.concatenate((self.target,) + tuple(FD*self.Posc for FD in self.FD_unosc_ppfx_univs))
         target -= np.dot(ND, self.c)
         # if fluxTimesE:
@@ -486,7 +483,7 @@ class flux_fitter:
         if not np.any(P):
             P = self.P
         if not np.any(ND):
-            ND = self.ND_full
+            ND = self.ND
         if not np.any(target):
             target = self.target
 

@@ -41,7 +41,11 @@ matplotlib.rc('font', family = 'FreeSerif', size = 16, weight = 'bold')
 matplotlib.rc('text', usetex = True)
 matplotlib.rc('axes', prop_cycle = matplotlib.cycler(color = DUNEcolors))
 
-class plot:
+class plot (object):
+    def __init__(self, style = "plot", *args, **kwargs):
+        self.style = style
+        self.legLineList = []
+        self.legLabelList = []
     def show(self, *args, **kwargs):
         self.fig.show(*args, **kwargs)
 
@@ -50,10 +54,17 @@ class plot:
             pass
         else:
             self.fig.savefig(fileName, *args, **kwargs)
-
+    def plot(self, ax, *args, **kwargs):
+        if self.style == "plot":
+            return ax.plot(*args, **kwargs)
+        elif self.style == "step":
+            return ax.step(*args, where = 'mid', **kwargs)
+            
 class fit_and_ratio_plot (plot):
-    def __init__(self, fitter = None, useTarget = True, useFit = True, title = None, Ebounds = True, **kwargs):
-        
+    def __init__(self, fitter = None, useTarget = True,
+                 useFit = True, title = None, Ebounds = True,
+                 *args, **kwargs):
+        super(fit_and_ratio_plot, self).__init__(*args, **kwargs)
         bandBounds = (0.16, 0.84)
 
         self.fig = plt.figure(figsize = (8.5, 5))
@@ -63,9 +74,6 @@ class fit_and_ratio_plot (plot):
                       hspace = 0)
         self.axUp = self.fig.add_subplot(gs[0, :])
         self.axLo = self.fig.add_subplot(gs[1, :])
-
-        self.legLineList = []
-        self.legLabelList = []
 
         self.legArgs = {"frameon": True,
                         "loc": "upper right"}
@@ -90,12 +98,13 @@ class fit_and_ratio_plot (plot):
             self.axLo.set_ylabel(kwargs["ylabel"], labelpad = 5)
         else:
             self.axLo.set_ylabel(r'$\frac{ND - FD (osc.)}{FD (unosc.)}$', labelpad = 5)
-        # self.axLo.set_ylim(-0.6, 0.6)
+        
         # self.axLo.set_yticks([-0.5, -0.25, 0, 0.25, 0.5])
         # self.axLo.set_yticklabels(["-50\%", "-25\%", "0\%", "25\%", "50\%"])
-        self.axLo.set_ylim(-0.12, 0.12)
-        self.axLo.set_yticks([-0.5, -0.25, 0, 0.25, 0.50])
-        self.axLo.set_yticklabels(["-50\%", "-25\%", "0\%", "25\%", "50\%"])
+        # self.axLo.set_ylim(-0.12, 0.12)
+        self.axLo.set_ylim(-0.06, 0.06)
+        self.axLo.set_yticks([-0.04, -0.02, 0, 0.02, 0.04])
+        self.axLo.set_yticklabels(["-4\%", "-2\%", "0\%", "2\%", "4\%"])
         self.axLo.grid(True, which = 'both')
 
         self.fig.tight_layout()
@@ -109,10 +118,11 @@ class fit_and_ratio_plot (plot):
             self.target = fitter.FD_oscillated
         else:
             self.target = fitter.target
-        targetNomLine, = self.axUp.plot(fitter.Ebins,
-                                        self.target,
-                                        color = color,
-                                        **kwargs)
+        targetNomLine, = self.plot(self.axUp,
+                                   fitter.Ebins,
+                                   self.target,
+                                   color = color,
+                                   **kwargs)
         if not label:
             label = ''.join([r'FD ',
                              LaTeXflavor[fitter.FDfromFlavor],
@@ -155,10 +165,11 @@ class fit_and_ratio_plot (plot):
                          **self.legArgs)
         
     def add(self, fitter, label = None, color = None, **kwargs):
-        NDNomLine, = self.axUp.plot(fitter.Ebins,
-                                    np.dot(fitter.ND_full, fitter.c),
-                                    color = color,
-                                    **kwargs)
+        NDNomLine, = self.plot(self.axUp,
+                               fitter.Ebins,
+                               np.dot(fitter.ND, fitter.c),
+                               color = color,
+                               **kwargs)
         self.legLineList.append(NDNomLine)
         
         if not label:
@@ -173,16 +184,18 @@ class fit_and_ratio_plot (plot):
         else:
             target = self.target
             denom = self.target
-        self.axLo.plot(fitter.Ebins,
-                       (np.dot(fitter.ND_full, fitter.c) - target)/denom,
-                       color = color)
+        self.plot(self.axLo,
+                  fitter.Ebins,
+                  (np.dot(fitter.ND, fitter.c) - target)/denom,
+                  color = NDNomLine.get_color())
         
         self.axUp.legend(self.legLineList,
                          self.legLabelList,
                          **self.legArgs)
 
 class fit_and_ratio_plot_with_sliders (plot):
-    def __init__(self, fitter = None, useTarget = True, useFit = True, title = None, Ebounds = True, regLims = [-12, -3], **kwargs):
+    def __init__(self, fitter = None, useTarget = True, useFit = True, title = None, Ebounds = True, regLims = [-12, -3], *args, **kwargs):
+        super(fit_and_ratio_plot_with_sliders, self).__init__(**kwargs)
         from matplotlib.widgets import Slider, Button, RadioButtons
         
         bandBounds = (0.16, 0.84)
@@ -274,10 +287,11 @@ class fit_and_ratio_plot_with_sliders (plot):
             self.target = fitter.FD_oscillated
         else:
             self.target = fitter.target
-        targetNomLine, = self.axUp.plot(fitter.Ebins,
-                                        self.target,
-                                        color = color,
-                                        **kwargs)
+        targetNomLine, = self.plot(self.axUp,
+                                   fitter.Ebins,
+                                   self.target,
+                                   color = color,
+                                   **kwargs)
         # if not label:
         #     label = ''.join([r'FD ',
         #                      LaTeXflavor[fitter.FDfromFlavor],
@@ -319,13 +333,13 @@ class fit_and_ratio_plot_with_sliders (plot):
                          self.legLabelList,
                          **self.legArgs)
         
-    def add(self, fitter, label = None, color = None, **kwargs):
+    def add(self, fitter, label = None, **kwargs):
         self.fitters.append(fitter)
         
-        NDNomLine, = self.axUp.plot(fitter.Ebins,
-                                    np.dot(fitter.ND_full, fitter.c),
-                                    color = color,
-                                    **kwargs)
+        NDNomLine, = self.plot(self.axUp,
+                               fitter.Ebins,
+                               np.dot(fitter.ND, fitter.c),
+                               **kwargs)
         self.legLineList.append(NDNomLine)
         
         if not label:
@@ -340,9 +354,10 @@ class fit_and_ratio_plot_with_sliders (plot):
         else:
             target = self.target
             denom = self.target
-        RatioLine, = self.axLo.plot(fitter.Ebins,
-                                    (np.dot(fitter.ND_full, fitter.c) - target)/denom,
-                                    color = color)
+        RatioLine, = self.plot(self.axLo,
+                               fitter.Ebins,
+                               (np.dot(fitter.ND, fitter.c) - target)/denom,
+                               **kwargs)
         self.ratioLineList.append(RatioLine)
         
         self.axUp.legend(self.legLineList,
@@ -364,8 +379,8 @@ class fit_and_ratio_plot_with_sliders (plot):
 
             fitter.set_fit_region(energies = (loBound, hiBound))
             fitter.calc_coeffs(reg, reg)
-            self.legLineList[i+1].set_ydata(np.dot(fitter.ND_full, fitter.c))
-            self.ratioLineList[i].set_ydata((np.dot(fitter.ND_full, fitter.c) - target)/denom)
+            self.legLineList[i+1].set_ydata(np.dot(fitter.ND, fitter.c))
+            self.ratioLineList[i].set_ydata((np.dot(fitter.ND, fitter.c) - target)/denom)
         # self.loBoundLineUp.set_xdata([loBound, loBound])
         # self.loBoundLineDown.set_xdata([loBound, loBound])
         # self.hiBoundLineUp.set_xdata([hiBound, hiBound])
@@ -375,6 +390,7 @@ class fit_and_ratio_plot_with_sliders (plot):
 
 class slider_super_plot (plot):
     def __init__(self, fitter = None, useTarget = True, useFit = True, title = None, Ebounds = True, regLims = [-12, -3], **kwargs):
+        super(slider_super_plot, self).__init__(**kwargs)
         from matplotlib.widgets import Slider, Button, RadioButtons
         
         bandBounds = (0.16, 0.84)
@@ -520,10 +536,11 @@ class slider_super_plot (plot):
             self.target = fitter.FD_oscillated
         else:
             self.target = fitter.target
-        targetNomLine, = self.axFit.plot(fitter.Ebins,
-                                        self.target,
-                                        color = color,
-                                        **kwargs)
+        targetNomLine, = self.plot(plot.axFit,
+                                   fitter.Ebins,
+                                   self.target,
+                                   color = color,
+                                   **kwargs)
         # if not label:
         #     label = ''.join([r'FD ',
         #                      LaTeXflavor[fitter.FDfromFlavor],
@@ -535,11 +552,11 @@ class slider_super_plot (plot):
 
         if Ebounds:
             self.loBoundLineUp = self.axFit.axvline(x = fitter.Ebounds[0],
-                                                   ls = '--',
-                                                   color = 'red')
+                                                    ls = '--',
+                                                    color = 'red')
             self.hiBoundLineUp = self.axFit.axvline(x = fitter.Ebounds[1],
-                                                   ls = '--',
-                                                   color = 'red')
+                                                    ls = '--',
+                                                    color = 'red')
             # self.loBoundArrowUp = self.axFit.arrow(fitter.Ebounds[0], 3.85e-16,
             #                                       0.15, 0,
             #                                       width = 2.e-18,
@@ -574,10 +591,11 @@ class slider_super_plot (plot):
         self.addLcurves(fitter, color)
 
     def addFit(self, fitter, color, label, **kwargs):
-        NDNomLine, = self.axFit.plot(fitter.Ebins,
-                                    np.dot(fitter.ND_full, fitter.c),
-                                    color = color,
-                                    **kwargs)
+        NDNomLine, = self.plot(self.axFit,
+                               fitter.Ebins,
+                               np.dot(fitter.ND, fitter.c),
+                               color = color,
+                               **kwargs)
         self.legLineList.append(NDNomLine)
         
         if not label:
@@ -593,9 +611,10 @@ class slider_super_plot (plot):
         else:
             target = self.target
             denom = self.target
-        RatioLine, = self.axRatio.plot(fitter.Ebins,
-                                    (np.dot(fitter.ND_full, fitter.c) - target)/denom,
-                                    color = color)
+        RatioLine, = self.plot(self.axRatio,
+                               fitter.Ebins,
+                               (np.dot(fitter.ND, fitter.c) - target)/denom,
+                               color = color)
         self.ratioLineList.append(RatioLine)
         
         self.axFit.legend(self.legLineList,
@@ -669,8 +688,8 @@ class slider_super_plot (plot):
 
             fitter.set_fit_region(energies = (loBound, hiBound))
             fitter.calc_coeffs(reg, reg)
-            self.legLineList[i+1].set_ydata(np.dot(fitter.ND_full, fitter.c))
-            self.ratioLineList[i].set_ydata((np.dot(fitter.ND_full, fitter.c) - target)/denom)
+            self.legLineList[i+1].set_ydata(np.dot(fitter.ND, fitter.c))
+            self.ratioLineList[i].set_ydata((np.dot(fitter.ND, fitter.c) - target)/denom)
             self.OAcoeffLineList[i].set_ydata(fitter.cOA)
             self.HCcoeffLineList[i].set_offsets(np.array([fitter.HCbins, fitter.cHC]).T)
 
@@ -696,8 +715,8 @@ class slider_super_plot (plot):
 
             fitter.set_fit_region(energies = (loBound, hiBound))
             fitter.calc_coeffs(reg, reg)
-            self.legLineList[i+1].set_ydata(np.dot(fitter.ND_full, fitter.c))
-            self.ratioLineList[i].set_ydata((np.dot(fitter.ND_full, fitter.c) - target)/denom)
+            self.legLineList[i+1].set_ydata(np.dot(fitter.ND, fitter.c))
+            self.ratioLineList[i].set_ydata((np.dot(fitter.ND, fitter.c) - target)/denom)
             self.OAcoeffLineList[i].set_ydata(fitter.cOA)
             self.HCcoeffLineList[i].set_offsets(np.array([fitter.HCbins, fitter.cHC]).T)
 
@@ -709,7 +728,8 @@ class slider_super_plot (plot):
         self.fig.canvas.draw_idle()
 
 class coeff_plot (plot):
-    def __init__(self, fitter = None, title = "Coefficients", HC = True, legend = True, **kwargs):
+    def __init__(self, fitter = None, title = "Coefficients", HC = True, legend = True, style = "step", **kwargs):
+        super(coeff_plot, self).__init__(style = style, **kwargs)
         self.fig = plt.figure()
 
         self.HC = HC
@@ -761,15 +781,15 @@ class coeff_plot (plot):
             self.add(fitter, **kwargs)
 
     def add(self, fitter, label = None, color = None, HCplot = False, **kwargs):
-        # self.OAax.plot(fitter.OAbins[fitter.OAbins <= fitter.maxOA],
-        #                fitter.cOA,
-        #                color = color,
-        #                label = label)
-        self.OAax.step(fitter.OAbins[fitter.OAbins <= fitter.maxOA],
-                       fitter.cOA,
-                       color = color,
-                       label = label,
-                       where = 'mid')
+
+        self.HCax.set_xticks(fitter.HCbins)
+        self.HCax.set_xticklabels([str(HC) for HC in fitter.HCbins])
+
+        self.plot(self.OAax,
+                  fitter.OAbins,
+                  fitter.cOA,
+                  color = color,
+                  label = label)
         
         self.coeffs.append(fitter.cOA[fitter.OAbins <= fitter.maxOA])
 
@@ -802,7 +822,8 @@ class coeff_plot (plot):
                     self.HCax.legend(**self.legArgs)
 
 class ND_flux_plot (plot):
-    def __init__(self, fitter, title = "ND Flux"):
+    def __init__(self, fitter, title = "ND Flux", **kwargs):
+        super(ND_flux_plot, self).__init__(**kwargs)
         self.fig = plt.figure()
         self.ax = self.fig.gca()
         
@@ -820,7 +841,8 @@ class ND_flux_plot (plot):
         self.fig.tight_layout()
 
 class ND_flux_slice_plot (plot):
-    def __init__(self, fitter, slices = [0, 10, 20, 30, 40, 50, 60]):
+    def __init__(self, fitter, slices = [0, 10, 20, 30, 40, 50, 60], **kwargs):
+        super(ND_flux_slice_plot, self).__init__(**kwargs)
         self.fig = plt.figure()
         self.ax = self.fig.gca()
         
@@ -840,7 +862,7 @@ class ND_flux_slice_plot (plot):
                                                alpha = 0.5)
                 errLines.append(errLine)
             meanLine, = self.ax.plot(fitter.Ebins,
-                                     fitter.ND_full[:,sliceInd])
+                                     fitter.ND[:,sliceInd])
             labels.append(str(fitter.OAbins[sliceInd]) + " m")
             meanLines.append(meanLine)
 
@@ -862,6 +884,7 @@ class ND_flux_slice_plot (plot):
 
 class FD_flux_plot (plot):
     def __init__(self, fitter = None, title = "FD Oscillated Flux", aspect = None, figSize = (6.4, 4.8), legendOn = True, **kwargs):
+        super(FD_flux_plot, self).__init__(**kwargs)
         self.fig = plt.figure(figsize = figSize)
         self.ax = self.fig.gca()
 
@@ -955,12 +978,12 @@ class FD_flux_plot (plot):
                 
     def add_fit(self, fitter, color = None, linestyle = None, label = r'ND Flux Match'):
         line, = self.ax.plot(fitter.Ebins,
-                            np.dot(fitter.ND_full, fitter.c),
-                            color = color,
-                            linestyle = linestyle)
+                             np.dot(fitter.ND, fitter.c),
+                             color = color,
+                             linestyle = linestyle)
         self.legLineList.append(line)
         self.legLabelList.append(label)
-
+        
         if self.legendOn:
             self.ax.legend(self.legLineList,
                            self.legLabelList,
@@ -1046,7 +1069,7 @@ class FD_flux_osc_and_unosc_plot (plot):
 
     def add_fit(self, fitter, color = None):
         fitLine, = self.ax.plot(fitter.Ebins,
-                                np.dot(fitter.ND_full, fitter.c),
+                                np.dot(fitter.ND, fitter.c),
                                 color = color)
         self.legLineList.append(fitLine)
         self.legLabelList.append(r'ND Flux Match')
@@ -1326,7 +1349,6 @@ class L_curve_curvature_plot (plot):
         line, = self.ax.plot(regRange[1:-1], curv)
 
         maxCurv = np.max(np.abs(curv[~np.isnan(curv)]))
-        print regRange[1:-1][np.abs(curv) == maxCurv]
         self.opt_l = regRange[1:-1][np.abs(curv) == maxCurv][0]
         if showOpt:
             self.ax.axvline(x = self.opt_l,
