@@ -59,6 +59,8 @@ class plot (object):
             return ax.plot(*args, **kwargs)
         elif self.style == "step":
             return ax.step(*args, where = 'mid', **kwargs)
+        elif self.style == "errorbar":
+            return ax.errorbar(*args, **kwargs)
             
 class fit_and_ratio_plot (plot):
     def __init__(self, fitter = None, useTarget = True,
@@ -671,8 +673,7 @@ class slider_super_plot (plot):
     
         curvatureLine, = self.axCurvature.plot(self.regRange[1:-1], curv)
         self.curvatureLineList.append(curvatureLine)
-
-        
+ 
     def updateRegSliders(self, val):
         reg = self.sReg.val
         loBound = self.sLoBound.val
@@ -916,8 +917,7 @@ class FD_flux_plot (plot):
         # self.ax.grid()
         self.ax.set_title(title)
         self.fig.tight_layout()
-
-            
+     
     def add(self, fitter, label = None, color = None, **kwargs):
         # if not label:
         #     label = r'FD ' + LaTeXflavor[fitter.FDfromFlavor] + r' $\rightarrow$ ' + LaTeXflavor[fitter.FDtoFlavor]
@@ -974,8 +974,7 @@ class FD_flux_plot (plot):
         self.ax.set_ylim(0, self.ymax)
 
         return line
-
-                
+         
     def add_fit(self, fitter, color = None, linestyle = None, label = r'ND Flux Match'):
         line, = self.ax.plot(fitter.Ebins,
                              np.dot(fitter.ND, fitter.c),
@@ -992,7 +991,9 @@ class FD_flux_plot (plot):
         return line
             
 class FD_flux_osc_and_unosc_plot (plot):
-    def __init__(self, fitter, title = "FD Flux", inset_text = None, logScale = False, figSize = (6.4, 4.8)):
+    def __init__(self, fitter, title = "FD Flux", inset_text = None, logScale = False, figSize = (6.4, 4.8), **kwargs):
+        super(FD_flux_osc_and_unosc_plot, self).__init__(**kwargs)
+
         self.fig = plt.figure(figsize = figSize)
         self.ax = plt.gca()
 
@@ -1079,7 +1080,9 @@ class FD_flux_osc_and_unosc_plot (plot):
                        frameon = False)
  
 class mike_plot (plot):
-    def __init__(self, fitter = None, varType = "ppfx", varKey = 0, label = r'ND \& FD', title = None, binEdges = [], ylim = None):
+    def __init__(self, fitter = None, varType = "ppfx", varKey = 0, label = r'ND \& FD', title = None, binEdges = [], ylim = None, **kwargs):
+        super(mike_plot, self).__init__(**kwargs)
+        
         self.fig = plt.figure()
         gs = GridSpec(2, 1,
                       figure = self.fig,
@@ -1163,7 +1166,9 @@ class mike_plot (plot):
                          self.legLabelList)
  
 class mike_summary_plot (plot):
-    def __init__(self, fitter, varType = "ppfx", title = None, makeIndividuals = False, ax = None, color = None, ylabels = True, binEdges = None):
+    def __init__(self, fitter, varType = "ppfx", title = None, makeIndividuals = False, ax = None, color = None, ylabels = True, binEdges = None, **kwargs):
+        super(mike_summary_plot, self).__init__(**kwargs)
+
         if not ax:
             self.fig = plt.figure()
             self.ax = self.fig.gca()
@@ -1224,7 +1229,6 @@ class mike_summary_plot (plot):
                         color = 'r')
 
         plt.tight_layout()
-        
     def save(self, fileName, remake = True, *args, **kwargs):
         plot.save(self, fileName, remake = remake, *args, **kwargs)
         if self.makeIndividuals:
@@ -1232,6 +1236,8 @@ class mike_summary_plot (plot):
                 subPlot.save(fileName.replace(".", "_"+str(varKey)+"."), remake = remake, **kwargs)
 class L_curve_plot (plot):
     def __init__(self, fitter = None, **kwargs):
+        super(L_curve_plot, self).__init__(**kwargs)
+
         self.fig = plt.figure()
         self.ax = self.fig.gca()
 
@@ -1297,6 +1303,8 @@ class L_curve_plot (plot):
 
 class L_curve_curvature_plot (plot):
     def __init__(self, fitter = None, **kwargs):
+        super(L_curve_curvature_plot, self).__init__(**kwargs)
+
         self.fig = plt.figure()
         self.ax = self.fig.gca()
 
