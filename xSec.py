@@ -44,7 +44,7 @@ mass_ND = vol_ND * LAr_dens
 massNucKg = 39.9623831238 * (1.998467052E-26 / 12.0)
 # Vol FD
 vol_FD = 6.2 * 11 * 11.96 # x * y * z FV m^3
-mass_FD = vol_FD * LAr_dens
+mass_FD = 4* vol_FD * LAr_dens
 bw = 0.05
 # bw = FD_flux->GetXaxis()->GetBinWidth(i + 1)
 # E = FD_flux->GetXaxis()->GetBinCenter(i + 1)

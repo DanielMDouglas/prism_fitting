@@ -62,11 +62,20 @@ class plot (object):
         elif self.style == "errorbar":
             return ax.errorbar(*args, **kwargs), 
         elif self.style == "errorband":
-            lower = args[1] - kwargs["yerr"]
-            upper = args[1] + kwargs["yerr"]
+            yerr = kwargs.pop('yerr')
+            lower = args[1] - yerr
+            upper = args[1] + yerr
             band = ax.fill_between(args[0], lower, upper, alpha = 0.5)
-            return ax.plot(*args)
-            
+            return ax.plot(*args, **kwargs)
+        elif self.style == "errorbandstep":
+            yerr = kwargs.pop('yerr')
+            lower = args[1] - yerr
+            upper = args[1] + yerr
+            line =  ax.step(*args, where = 'mid', **kwargs)
+            if 'color' in kwargs:
+                kwargs.pop('color')
+            band = ax.fill_between(args[0], lower, upper, step = 'mid', alpha = 0.5, color = line[0].get_color(), **kwargs)
+            return line
  
 class fit_and_ratio_plot (plot):
     def __init__(self, fitter = None, useTarget = True,
@@ -192,6 +201,142 @@ class fit_and_ratio_plot (plot):
         self.plot(self.axLo,
                   fitter.Ebins,
                   (fitter.fluxPred - target)/denom,
+                  color = NDNomLine.get_color())
+        
+        self.axUp.legend(self.legLineList,
+                         self.legLabelList,
+                         **self.legArgs)
+
+class fit_and_ratio_rate_plot (plot):
+    def __init__(self, fitter = None, useTarget = True,
+                 useFit = True, title = None, Ebounds = True,
+                 *args, **kwargs):
+        super(fit_and_ratio_rate_plot, self).__init__(*args, **kwargs)
+        bandBounds = (0.16, 0.84)
+
+        self.fig = plt.figure(figsize = (8.5, 5))
+        gs = GridSpec(2, 1,
+                      figure = self.fig,
+                      height_ratios = [0.7, 0.3],
+                      hspace = 0)
+        self.axUp = self.fig.add_subplot(gs[0, :])
+        self.axLo = self.fig.add_subplot(gs[1, :])
+
+        self.legArgs = {"frameon": True,
+                        "loc": "upper right"}
+        if title:
+            self.legArgs.update({"title": title})
+            
+        if fitter:
+            if useTarget:
+                self.add_target(fitter, Ebounds)
+            if useFit:
+                self.add(fitter, **kwargs)
+            
+        self.axUp.set_xlim(0, 10)
+        self.axUp.set_xticklabels([])
+        self.axUp.grid(True, which = 'both')
+        self.axUp.set_ylabel(r'Event Rate [events per bin per year]', labelpad = 15)
+
+        self.axLo.grid(True)
+        self.axLo.set_xlim(0, 10)
+        self.axLo.set_xlabel(r'$E_\nu$ [GeV]')
+        if "ylabel" in kwargs:
+            self.axLo.set_ylabel(kwargs["ylabel"], labelpad = 5)
+        else:
+            self.axLo.set_ylabel(r'$\frac{ND - FD (osc.)}{FD (unosc.)}$', labelpad = 5)
+        
+        self.axLo.set_ylim(-0.06, 0.06)
+        self.axLo.set_yticks([-0.04, -0.02, 0, 0.02, 0.04])
+        self.axLo.set_yticklabels(["-4\%", "-2\%", "0\%", "2\%", "4\%"])
+        self.axLo.grid(True, which = 'both')
+
+        self.fig.tight_layout()
+
+        self.full_flux = True
+
+    def add_target(self, fitter, label = None,
+                   Ebounds = True, color = 'black', **kwargs):
+        if self.style in ['errorbar', 'errorband', 'errorbandstep']:
+            yerr = fitter.FD_rate_statErr
+        else:
+            yerr = None
+        targetNomLine, = self.plot(self.axUp,
+                                   fitter.Ebins,
+                                   fitter.FD_rate,
+                                   yerr = yerr,
+                                   color = color,
+                                   **kwargs)
+        if not label:
+            label = ''.join([r'FD ',
+                             LaTeXflavor[fitter.FDfromFlavor],
+                             r' $\rightarrow$ ',
+                             LaTeXflavor[fitter.FDtoFlavor]])
+        if label:
+            self.legLineList.append(targetNomLine)
+            self.legLabelList.append(label)
+
+        if Ebounds:
+            self.axUp.axvline(x = fitter.Ebounds[0],
+                              ls = '--',
+                              color = 'red')
+            self.axUp.axvline(x = fitter.Ebounds[1],
+                              ls = '--',
+                              color = 'red')
+            self.axUp.arrow(fitter.Ebounds[0], 3.85e-16,
+                            0.15, 0,
+                            width = 2.e-18,
+                            head_length = 0.05,
+                            color = 'red')
+            self.axUp.arrow(fitter.Ebounds[1], 0.35e-16,
+                            -0.15, 0,
+                            width = 2.e-18,
+                            head_length = 0.05,
+                            color = 'red')
+        
+            self.axLo.axvline(x = fitter.Ebounds[0],
+                          ls = '--',
+                              color = 'red')
+            self.axLo.axvline(x = fitter.Ebounds[1],
+                              ls = '--',
+                              color = 'red')
+
+        self.axUp.set_ylim(-0.2*np.max(fitter.FD_rate),
+                           1.2*np.max(fitter.FD_rate))
+        
+        self.axUp.legend(self.legLineList,
+                         self.legLabelList,
+                         **self.legArgs)
+        
+    def add(self, fitter, label = None, color = None, **kwargs):
+        if self.style in ['errorbar', 'errorband', 'errorbandstep']:
+            yerr = fitter.FD_rate_statErr
+        else:
+            yerr = None
+        NDNomLine, = self.plot(self.axUp,
+                               fitter.Ebins,
+                               fitter.ratePred,
+                               yerr = yerr,
+                               color = color,
+                               **kwargs)
+        self.legLineList.append(NDNomLine)
+        
+        if not label:
+            self.legLabelList.append(r'Fluxes up to ' + str(fitter.maxOA) + r'm')
+        else:
+            self.legLabelList.append(label)
+
+        if self.full_flux:
+            target = fitter.FD_oscillated
+            # denom = fitter.FD_oscillated
+            denom = fitter.FD_unoscillated
+        else:
+            target = self.target
+            denom = self.target
+        self.plot(self.axLo,
+                  fitter.Ebins,
+                  (fitter.fluxPred - target)/denom,
+                  yerr = yerr,
                   color = NDNomLine.get_color())
         
         self.axUp.legend(self.legLineList,
@@ -1024,7 +1169,7 @@ class FD_rate_plot (plot):
              self.add(fitter, **kwargs)
 
         self.ax.set_xlabel(r'$E_\nu$ [GeV]')
-        self.ax.set_ylabel(r'$\Phi$ [cm$^{-2}$ per POT per GeV]')
+        self.ax.set_ylabel(r'Event Rate [events per bin per year]')
 
         self.ax.set_title(title)
 
@@ -1034,11 +1179,15 @@ class FD_rate_plot (plot):
      
     def add(self, fitter, label = "FD Event Rate", **kwargs):
         self.legLabelList.append(label)
-            
+
+        if self.style in ['errorbar', 'errorband', 'errorbandstep']:
+            yerr = fitter.FD_rate_statErr
+        else:
+            yerr = None
         line, = self.plot(self.ax,
                           fitter.Ebins,
                           fitter.FD_rate,
-                          yerr = fitter.FD_rate_statErr,
+                          yerr = yerr,
                           **kwargs)
         
         self.legLineList.append(line)
@@ -1054,10 +1203,14 @@ class FD_rate_plot (plot):
         return line
 
     def add_fit(self, fitter, label = r'ND Match', **kwargs):
+        if self.style in ['errorbar', 'errorband', 'errorbandstep']:
+            yerr = fitter.FD_rate_statErr
+        else:
+            yerr = None
         line = self.plot(self.ax,
                           fitter.Ebins,
                           fitter.ratePred,
-                          yerr = fitter.ratePred_statErr,
+                          yerr = yerr,
                           **kwargs)
         self.legLineList.append(line)
         self.legLabelList.append(label)
