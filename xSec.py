@@ -40,11 +40,13 @@ xSec = {"nue": {"CCInc": crossSection(xSecFileName, "Ar40.nu12.E_0_10GeV.sigmaen
 # Vol ND
 LAr_dens = 1.3954 * (1E-3 / 1E-6) # g/cm3 -> kg/m^3
 vol_ND = 0.5 * 2 * 3              # x * y * z FV m^3
-mass_ND = vol_ND * LAr_dens
+# mass_ND = vol_ND * LAr_dens
+mass_ND = 67.e3
 massNucKg = 39.9623831238 * (1.998467052E-26 / 12.0)
 # Vol FD
 vol_FD = 6.2 * 11 * 11.96 # x * y * z FV m^3
-mass_FD = 4* vol_FD * LAr_dens
+# mass_FD = 4* vol_FD * LAr_dens
+mass_FD = 40.e6
 bw = 0.05
 # bw = FD_flux->GetXaxis()->GetBinWidth(i + 1)
 # E = FD_flux->GetXaxis()->GetBinCenter(i + 1)

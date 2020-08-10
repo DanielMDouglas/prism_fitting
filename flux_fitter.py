@@ -346,7 +346,7 @@ class flux_fitter:
         if self.other_systs_loaded:
             self.load_ND_HC_other_systs()
             
-    def calc_coeffs(self, OAreg, HCreg, ND = [None], target = [None], fluxTimesE = False, **kwargs):
+    def calc_coeffs(self, OAreg, HCreg, ND = [None], target = [None], fluxTimesE = False, NDtoFD = NDtoFD, **kwargs):
         if not np.any(ND):
             ND = self.ND
         if not np.any(target):
@@ -532,7 +532,7 @@ class flux_fitter:
     def solution_norm(self, A = None, **kwargs):
         if not np.any(A):
             A = self.A
-        return np.sqrt(np.sum(np.power(np.dot(self.A, self.c), 2)))
+        return np.sqrt(np.sum(np.power(np.dot(A, self.c), 2)))
 
     def variance_norm(self):
         if self.ppfx_systs_loaded:
