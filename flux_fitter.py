@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 
 class flux_fitter:
-    def __init__(self, beamMode, FDfromFlavor, FDtoFlavor, NDflavor, oscParam = None, Erebin = 1, OArebin = 1, useHC = True):
+    def __init__(self, beamMode, FDfromFlavor, FDtoFlavor, NDflavor, oscParam = None, Erebin = 10, OArebin = 1, useHC = True):
         """
         flux_fitter object which holds fluxes, settings, and solutions to 
         DUNE-PRISM style flux matching problems
