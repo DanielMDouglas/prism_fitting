@@ -151,16 +151,21 @@ def rebin(oldHist, rebinF, axis = 0):
     return newHist
 
 
-def rebin_by_bin_edge(oldHist, oldBinCenters, newBinEdges, axis = 0):
+def rebin_by_bin_edge(oldHist, oldBinCenters, newBinEdges, axis = 0, side = 'left'):
     # WARNING: Only works for axis = 0 or 1 for now!
     oldShape = oldHist.shape
     newShape = oldShape[:axis] + tuple((newBinEdges.size-1,)) + oldShape[axis+1:]
     newHist = np.ndarray(newShape)
     if axis == 0:
         for i, (leftEdge, rightEdge) in enumerate(zip(newBinEdges[:-1], newBinEdges[1:])):
-            newHist[i] = np.sum(oldHist[np.logical_and(leftEdge < oldBinCenters,
-                                                       oldBinCenters <= rightEdge)],
-                                axis = axis)
+            if side == 'right':
+                newHist[i] = np.sum(oldHist[np.logical_and(leftEdge < oldBinCenters,
+                                                           oldBinCenters <= rightEdge)],
+                                    axis = axis)
+            else:
+                newHist[i] = np.sum(oldHist[np.logical_and(leftEdge <= oldBinCenters,
+                                                           oldBinCenters < rightEdge)],
+                                    axis = axis)    
         return newHist
     elif axis == 1:
         for i in range(newHist.shape[0]):
@@ -172,13 +177,19 @@ def average(oldHist, rebinF, **kwargs):
     return rebin(oldHist, rebinF, **kwargs)/float(rebinF)
 
 
-def average_by_bin_edge(oldHist, oldBinCenters, newBinEdges, axis = 0):
+def average_by_bin_edge(oldHist, oldBinCenters, newBinEdges, axis = 0, side = 'left'):
     rebinned = rebin_by_bin_edge(oldHist, oldBinCenters, newBinEdges, axis = axis)
     # binWidths = np.ndarray((rebinned.shape[axis]))
     for i, (leftEdge, rightEdge) in enumerate(zip(newBinEdges[:-1], newBinEdges[1:])):
-        nInside = np.sum(np.logical_and(leftEdge < oldBinCenters,
-                                        oldBinCenters <= rightEdge),
-                         dtype = float)
+        if side == 'right':
+            nInside = np.sum(np.logical_and(leftEdge < oldBinCenters,
+                                            oldBinCenters <= rightEdge),
+                             dtype = float)
+        else:
+            nInside = np.sum(np.logical_and(leftEdge <= oldBinCenters,
+                                            oldBinCenters < rightEdge),
+                             dtype = float)
+
         rebinned[i] /= nInside
     return rebinned
 
