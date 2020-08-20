@@ -345,7 +345,7 @@ class flux_fitter:
     def set_maxOA(self, maxOA):
         self.maxOA = maxOA
         self.OAbins = self.OAbins[self.OAbins <= maxOA]
-        self.OAbinEdges = self.OAbinEdges[self.OAbinEdges <= maxOA]
+        self.OAbinEdges = self.OAbinEdges[:len(self.OAbins)+1]
         self.load_ND_OA_nom()
         
         if self.ppfx_systs_loaded:
