@@ -62,9 +62,10 @@ class flux_fitter:
 
         # if not specified, load the default oscillation profile
         if not oscParam:
-            self.Posc = oscProb(FDfromFlavor, FDtoFlavor).load(self.Ebins)
+            self.oscParam = oscProb(FDfromFlavor, FDtoFlavor)
         else:
-            self.Posc = oscParam.load(self.Ebins)
+            self.oscParam = oscParam
+        self.Posc = self.oscParam.load(self.Ebins)
             
         # load cross sections
         self.load_xSec()
@@ -297,30 +298,29 @@ class flux_fitter:
                     self.Ebounds = (foundPeaks[-peaks[1]], foundPeaks[-peaks[0]])
                 print("found peaks at ", self.Ebounds)
 
-    def set_rebin(self, Erebin = self.Erebin, OArebin = self.OArebin):
+    def set_rebin(self, Erebin = None, OArebin = None):
         """
         Set the rebin variables and redefine axes and reload fluxes
         """
-        self.Erebin = Erebin
-        if type(self.Erebin) == np.ndarray:
-            self.Ebins = average_by_bin_edge(self.Ebins, Ebins, self.Erebin)
-            self.EbinEdges = self.Erebin
-        elif type(self.Erebin) == int:
-            self.Ebins = average(self.Ebins, self.Erebin)
-            self.EbinEdges = self.EbinEdges[::self.Erebin]
+        if Erebin:
+            self.Erebin = Erebin
+            if type(self.Erebin) == np.ndarray:
+                self.Ebins = average_by_bin_edge(self.Ebins, Ebins, self.Erebin)
+                self.EbinEdges = self.Erebin
+            elif type(self.Erebin) == int:
+                self.Ebins = average(self.Ebins, self.Erebin)
+                self.EbinEdges = self.EbinEdges[::self.Erebin]
 
-        self.OArebin = OArebin
-        if type(self.OArebin) == np.ndarray:
-            self.OAbins = average_by_bin_edge(self.OAbins, OAbins, self.OArebin)
-            self.OAbinEdges = self.OArebin
-        elif type(self.OArebin) == int:
-            self.OAbins = average(self.OAbins, self.OArebin)
-            self.OAbinEdges = self.OAbinEdges[::self.OArebin]
+        if OArebin:
+            self.OArebin = OArebin
+            if type(self.OArebin) == np.ndarray:
+                self.OAbins = average_by_bin_edge(self.OAbins, OAbins, self.OArebin)
+                self.OAbinEdges = self.OArebin
+            elif type(self.OArebin) == int:
+                self.OAbins = average(self.OAbins, self.OArebin)
+                self.OAbinEdges = self.OAbinEdges[::self.OArebin]
 
-        if not oscParam:
-            self.Posc = oscProb(FDfromFlavor, FDtoFlavor).load(self.Ebins)
-        else:
-            self.Posc = oscParam.load(self.Ebins)
+        self.Posc = self.oscParam.load(self.Ebins)
             
         # load cross sections
         self.load_xSec()
