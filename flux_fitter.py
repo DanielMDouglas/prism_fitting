@@ -66,7 +66,11 @@ class flux_fitter:
         else:
             self.oscParam = oscParam
         self.Posc = self.oscParam.load(self.Ebins)
-            
+
+
+        self.ND_OA_loaded = False
+        self.ND_HC_loaded = False
+
         # load cross sections
         self.load_xSec()
 
@@ -79,7 +83,12 @@ class flux_fitter:
 
         # Don't load systematics by default
         self.ppfx_systs_loaded = False
+        self.ND_OA_ppfx_systs_loaded = False
+        self.ND_HC_ppfx_systs_loaded = False
+
         self.other_systs_loaded = False
+        self.ND_OA_other_systs_loaded = False
+        self.ND_HC_other_systs_loaded = False
 
     def load_xSec(self):
         """
@@ -110,8 +119,9 @@ class flux_fitter:
 
         self.ND_OA_rate = NDscale*(self.ND_OA.T*self.NDxSec).T
         self.ND_OA_rate_statErr = np.sqrt(self.ND_OA_rate)
-        
-        if "ND_HC" in dir(self):
+
+        self.ND_OA_loaded = True
+        if self.ND_HC_loaded:
             self.ND = np.concatenate((self.ND_OA, self.ND_HC), axis = 1)
             self.ND_rate = np.concatenate((self.ND_OA_rate, self.ND_HC_rate), axis = 1)
             self.ND_rate_statErr = np.concatenate((self.ND_OA_rate_statErr, self.ND_HC_rate_statErr), axis = 1)
@@ -129,7 +139,8 @@ class flux_fitter:
         self.ND_HC_rate = NDscale*(self.ND_HC.T*self.NDxSec).T
         self.ND_HC_rate_statErr = np.sqrt(self.ND_HC_rate)
 
-        if "ND_OA" in dir(self):
+        self.ND_HC_loaded = True
+        if self.ND_OA_loaded:
             self.ND = np.concatenate((self.ND_OA, self.ND_HC), axis = 1)
             self.ND_rate = np.concatenate((self.ND_OA_rate, self.ND_HC_rate), axis = 1)
             self.ND_rate_statErr = np.concatenate((self.ND_OA_rate_statErr, self.ND_HC_rate_statErr), axis = 1)
@@ -139,6 +150,10 @@ class flux_fitter:
         Load all nominal fluxes
         """
         self.load_FD_nom()
+        
+        self.ND_OA_loaded = False
+        self.ND_HC_loaded = False
+
         self.load_ND_OA_nom()
         self.load_ND_HC_nom()
         
@@ -160,6 +175,7 @@ class flux_fitter:
         """
         Load the hadron production throws for the near detector flux for off-axis positions
         """
+        print "loading ND OA ppfx"
         ND_OA_CV = ND_ppfx_CV[self.beamMode][self.FDfromFlavor].load(binEdges = [self.EbinEdges, self.OAbinEdges])
         ND_OA = np.array([shift.load(binEdges = [self.EbinEdges, self.OAbinEdges]) for shift
                           in ND_ppfx_shifts[self.beamMode][self.NDflavor][:nUniv]])
@@ -167,8 +183,10 @@ class flux_fitter:
         ND_OA /= ND_OA_CV
         ND_OA *= self.ND_OA
 
+        self.ND_OA_ppfs_shifts_loaded = True
         self.ND_OA_ppfx_univs = ND_OA
-        if "ND_HC_ppfx_univs" in dir(self):
+        if self.ND_HC_ppfx_shifts_loaded:
+            print "boop"
             self.ND_ppfx_univs = np.concatenate((self.ND_OA_ppfx_univs,
                                                  self.ND_HC_ppfx_univs),
                                                 axis = 2)
@@ -177,6 +195,7 @@ class flux_fitter:
         """
         Load the hadron production throws for the near detector flux for alternative horn currents
         """
+        print "loading ND HC ppfx"
         ND_HC_CV = np.array([ND_HC_ppfx_CV[self.beamMode][self.FDfromFlavor][current].load(binEdges = [self.EbinEdges])
                              for current in self.HCbins]).T
         if np.any(self.HCbins):
@@ -188,9 +207,10 @@ class flux_fitter:
 
         ND_HC /= ND_HC_CV
         ND_HC *= 12*self.ND_HC
-        
+
+        self.HC_HC_ppfx_shifts_loaded = True
         self.ND_HC_ppfx_univs = ND_HC
-        if "ND_OA_ppfx_univs" in dir(self):
+        if self.ND_OA_ppfx_shifts_loaded:
             self.ND_ppfx_univs = np.concatenate((self.ND_OA_ppfx_univs,
                                                  self.ND_HC_ppfx_univs),
                                                 axis = 2)
@@ -200,6 +220,10 @@ class flux_fitter:
         Load all hadron production throws
         """
         self.load_FD_ppfx_systs(nUniv = nUniv)
+
+        self.ND_OA_ppfx_shifts_loaded = False
+        self.ND_HC_ppfx_shifts_loaded = False
+        
         self.load_ND_OA_ppfx_systs(nUniv = nUniv)
         self.load_ND_HC_ppfx_systs(nUniv = nUniv)
 
@@ -222,7 +246,8 @@ class flux_fitter:
                  for key, shift in ND_other_shifts[self.beamMode][self.NDflavor].items()}
         self.ND_OA_other_univs = ND_OA
 
-        if "ND_HC_other_univs" in dir(self):
+        self.ND_OA_other_shifts_loaded = True
+        if self.ND_HC_other_shifts_loaded:
             self.ND_other_univs = {key: np.concatenate((self.ND_OA_other_univs[key],
                                                         self.ND_HC_other_univs[key]),
                                                        axis = 1)
@@ -248,7 +273,8 @@ class flux_fitter:
                      for key in HCsystKeys}
             
         self.ND_HC_other_univs = ND_HC
-        if "ND_OA_other_univs" in dir(self):
+        self.ND_HC_other_shifts_loaded = True
+        if self.ND_OA_other_shifts_loaded:
             self.ND_other_univs = {key: np.concatenate((self.ND_OA_other_univs[key],
                                                         self.ND_HC_other_univs[HCkey]),
                                                        axis = 1)
@@ -259,6 +285,10 @@ class flux_fitter:
         Load all systematic throw fluxes for specific beam parameters
         """
         self.load_FD_other_systs()
+
+        self.ND_OA_other_shifts_loaded = False
+        self.ND_HC_other_shifts_loaded = False
+
         self.load_ND_OA_other_systs()
         self.load_ND_HC_other_systs()
 
@@ -406,8 +436,12 @@ class flux_fitter:
         self.P = P
         # ND matrix
         NDmatr = np.matrix(ND)
-        LHS = np.matmul(NDmatr.T, np.matmul(P, NDmatr)) + np.matmul(Gamma.T, Gamma)
-        RHS = np.dot(np.matmul(NDmatr.T, P), target)
+        if OAreg == 0 and HCreg == 0:
+            LHS = NDmatr.T
+            RHS = target
+        else:
+            LHS = np.matmul(NDmatr.T, np.matmul(P, NDmatr)) + np.matmul(Gamma.T, Gamma)
+            RHS = np.dot(np.matmul(NDmatr.T, P), target)
         
         self.c = np.array(np.dot(RHS, LHS.I)).squeeze()
         self.cOA = self.c[:nBinsOA]
@@ -556,7 +590,7 @@ class flux_fitter:
         if not np.any(target):
             target = self.target
 
-        return np.sqrt(np.sum(np.power(np.matmul(P, np.dot(ND, self.c) - target), 2)))
+        return np.sqrt(np.sum(np.power(np.matmul(P, self.fluxPred - target), 2)))
     
     def solution_norm(self, A = None, **kwargs):
         if not np.any(A):
