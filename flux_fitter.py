@@ -210,7 +210,7 @@ class flux_fitter:
             ND_HC = np.ndarray((nUniv, self.initNEbins, len(self.HCbins)))
 
         ND_HC /= ND_HC_CV
-        ND_HC *= 12*self.ND_HC
+        ND_HC *= self.ND_HC
 
         self.ND_HC_ppfx_shifts_loaded = True
         self.ND_HC_ppfx_univs = ND_HC
