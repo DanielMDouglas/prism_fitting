@@ -157,10 +157,12 @@ class flux_fitter:
         self.load_ND_OA_nom()
         self.load_ND_HC_nom()
         
-    def load_FD_ppfx_systs(self, nUniv = 100):
+    def load_FD_ppfx_systs(self):
         """
         Load the hadron production throws for the far detector flux
         """
+        nUniv = self.nPpfxUniv
+        
         flux = FD_ppfx_CV[self.beamMode][self.FDfromFlavor]
         FD_CV = flux.load(binEdges = [self.EbinEdges])
         FD = np.array([shift.load(binEdges = [self.EbinEdges]) for shift
@@ -171,11 +173,12 @@ class flux_fitter:
 
         self.FD_unosc_ppfx_univs = FD
 
-    def load_ND_OA_ppfx_systs(self, nUniv = 100):
+    def load_ND_OA_ppfx_systs(self):
         """
         Load the hadron production throws for the near detector flux for off-axis positions
         """
-        print "loading ND OA ppfx"
+        nUniv = self.nPpfxUniv
+
         ND_OA_CV = ND_ppfx_CV[self.beamMode][self.FDfromFlavor].load(binEdges = [self.EbinEdges, self.OAbinEdges])
         ND_OA = np.array([shift.load(binEdges = [self.EbinEdges, self.OAbinEdges]) for shift
                           in ND_ppfx_shifts[self.beamMode][self.NDflavor][:nUniv]])
@@ -183,19 +186,20 @@ class flux_fitter:
         ND_OA /= ND_OA_CV
         ND_OA *= self.ND_OA
 
-        self.ND_OA_ppfs_shifts_loaded = True
+        self.ND_OA_ppfx_shifts_loaded = True
         self.ND_OA_ppfx_univs = ND_OA
         if self.ND_HC_ppfx_shifts_loaded:
-            print "boop"
             self.ND_ppfx_univs = np.concatenate((self.ND_OA_ppfx_univs,
                                                  self.ND_HC_ppfx_univs),
                                                 axis = 2)
 
-    def load_ND_HC_ppfx_systs(self, nUniv = 100):
+
+    def load_ND_HC_ppfx_systs(self):
         """
         Load the hadron production throws for the near detector flux for alternative horn currents
         """
-        print "loading ND HC ppfx"
+        nUniv = self.nPpfxUniv
+        
         ND_HC_CV = np.array([ND_HC_ppfx_CV[self.beamMode][self.FDfromFlavor][current].load(binEdges = [self.EbinEdges])
                              for current in self.HCbins]).T
         if np.any(self.HCbins):
@@ -208,7 +212,7 @@ class flux_fitter:
         ND_HC /= ND_HC_CV
         ND_HC *= 12*self.ND_HC
 
-        self.HC_HC_ppfx_shifts_loaded = True
+        self.ND_HC_ppfx_shifts_loaded = True
         self.ND_HC_ppfx_univs = ND_HC
         if self.ND_OA_ppfx_shifts_loaded:
             self.ND_ppfx_univs = np.concatenate((self.ND_OA_ppfx_univs,
@@ -219,13 +223,15 @@ class flux_fitter:
         """
         Load all hadron production throws
         """
-        self.load_FD_ppfx_systs(nUniv = nUniv)
+        self.nPpfxUniv = nUniv
+        
+        self.load_FD_ppfx_systs()
 
         self.ND_OA_ppfx_shifts_loaded = False
         self.ND_HC_ppfx_shifts_loaded = False
         
-        self.load_ND_OA_ppfx_systs(nUniv = nUniv)
-        self.load_ND_HC_ppfx_systs(nUniv = nUniv)
+        self.load_ND_OA_ppfx_systs()
+        self.load_ND_HC_ppfx_systs()
 
         self.ppfx_systs_loaded = True
 
