@@ -6,7 +6,10 @@ class crossSection:
         self.infileName = infileName
         self.branchName = branchName
     def load(self, **kwargs):
-        content, stat = root_to_array(self.infileName, self.branchName, **kwargs)
+        content, stat = root_to_array(self.infileName,
+                                      self.branchName,
+                                      method = "interpolate",
+                                      **kwargs)
         return content
 
 # Everything from here on depends on the tree structure
@@ -47,15 +50,15 @@ massNucKg = 39.9623831238 * (1.998467052E-26 / 12.0)
 vol_FD = 6.2 * 11 * 11.96 # x * y * z FV m^3
 # mass_FD = 4* vol_FD * LAr_dens
 mass_FD = 40.e6
-bw = 0.05
+# bw = 0.05
 # bw = FD_flux->GetXaxis()->GetBinWidth(i + 1)
 # E = FD_flux->GetXaxis()->GetBinCenter(i + 1)
 # Flux = FD_flux->GetBinContent(i + 1) * bw
 # FDEvRate_POT(i) = Flux * xsec_ccinc->Interpolate(E) * calc->P(14, 14, E) * mass_FD * 40.0 / MassNucKg
 
-T = 1
+T = 3.5 # years
 POT = 1.1e21 # POT/year
 
-NDscale = mass_ND*40.0*POT*T/massNucKg
-FDscale = mass_FD*40.0*POT*T/massNucKg
+NDscale = mass_ND*POT*T/massNucKg
+FDscale = mass_FD*POT*T/massNucKg
 NDtoFD = mass_FD/mass_ND

@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider
 from ROOT import *
 
-def root_to_array(infileName, branchName, binEdges = []):
+def root_to_array(infileName, branchName, binEdges = [], method = "average"):
     infile = TFile(infileName)
     TH = infile.Get(branchName)
     shape = [TH.GetNbinsX(),
@@ -24,11 +24,17 @@ def root_to_array(infileName, branchName, binEdges = []):
 
     if list(binEdges):
         oldBins = list(root_to_axes(infileName, branchName))
-
-        for axis, theseBinEdges in enumerate(binEdges):
-            con = average_by_bin_edge(con, oldBins[axis], theseBinEdges, axis = axis)
-            err = average_by_bin_edge(err, oldBins[axis], theseBinEdges, axis = axis)
-
+        
+        if method == "average":
+            for axis, theseBinEdges in enumerate(binEdges):
+                con = average_by_bin_edge(con, oldBins[axis], theseBinEdges, axis = axis)
+                err = average_by_bin_edge(err, oldBins[axis], theseBinEdges, axis = axis)
+        elif method == "interpolate":
+            for axis, theseBinEdges in enumerate(binEdges):
+                theseBinCenters = 0.5*(theseBinEdges[:-1] + theseBinEdges[1:])
+                con = np.interp(theseBinCenters, oldBins[axis], con)
+                err = np.interp(theseBinCenters, oldBins[axis], err)
+            
     return con, err
 
 
@@ -190,7 +196,10 @@ def average_by_bin_edge(oldHist, oldBinCenters, newBinEdges, axis = 0, side = 'l
                                             oldBinCenters < rightEdge),
                              dtype = float)
 
-        rebinned[i] /= nInside
+        if axis == 0:
+            rebinned[i] /= nInside
+        elif axis == 1:
+            rebinned[:, i] /= nInside
     return rebinned
 
 

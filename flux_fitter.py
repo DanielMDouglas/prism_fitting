@@ -67,7 +67,6 @@ class flux_fitter:
             self.oscParam = oscParam
         self.Posc = self.oscParam.load(self.Ebins)
 
-
         self.ND_OA_loaded = False
         self.ND_HC_loaded = False
 
@@ -94,8 +93,8 @@ class flux_fitter:
         """
         Load cross sections for the set flavors
         """
-        self.NDxSec = xSec[self.NDflavor]["total"].load(binEdges = [self.EbinEdges])
-        self.FDxSec = xSec[self.FDtoFlavor]["total"].load(binEdges = [self.EbinEdges])
+        self.NDxSec = self.Ebins*xSec[self.NDflavor]["total"].load(binEdges = [self.EbinEdges])
+        self.FDxSec = self.Ebins*xSec[self.FDtoFlavor]["total"].load(binEdges = [self.EbinEdges])
         
     def load_FD_nom(self):
         """
@@ -500,6 +499,7 @@ class flux_fitter:
         RHS = np.dot(np.matmul(NDmatr.T, P), target)
 
         self.c = np.array(np.dot(RHS, LHS.I)).squeeze()
+        self.c = np.linalg.solve(LHS, RHS)
         self.cOA = self.c[:nBinsOA]
         self.cHC = self.c[nBinsOA:]
 

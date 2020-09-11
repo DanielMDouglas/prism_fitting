@@ -938,7 +938,8 @@ class coeff_plot (plot):
                   fitter.OAbins,
                   fitter.cOA,
                   color = color,
-                  label = label)
+                  label = label,
+                  **kwargs)
         
         self.coeffs.append(fitter.cOA[fitter.OAbins <= fitter.maxOA])
 
@@ -1142,7 +1143,7 @@ class FD_flux_plot (plot):
         return line
             
 class FD_rate_plot (plot):
-    def __init__(self, fitter = None, title = "FD Event Rate", aspect = None, figSize = (6.4, 4.8), legendOn = True, style = "step", **kwargs):
+    def __init__(self, fitter = None, title = "FD Event Rate", aspect = None, figSize = (6.4, 4.8), legendOn = True, style = "errorbandstep", **kwargs):
         super(FD_rate_plot, self).__init__(style = style, **kwargs)
 
         self.fig = plt.figure(figsize = figSize)
@@ -1208,10 +1209,10 @@ class FD_rate_plot (plot):
         else:
             yerr = None
         line = self.plot(self.ax,
-                          fitter.Ebins,
-                          fitter.ratePred,
-                          yerr = yerr,
-                          **kwargs)
+                         fitter.Ebins,
+                         fitter.ratePred,
+                         yerr = yerr,
+                         **kwargs)
         self.legLineList.append(line)
         self.legLabelList.append(label)
         
