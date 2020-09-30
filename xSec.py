@@ -5,12 +5,13 @@ class crossSection:
     def __init__(self, infileName, branchName):
         self.infileName = infileName
         self.branchName = branchName
-    def load(self, **kwargs):
+    def load(self, binEdges = [EbinEdges]):
+        binCenters = 0.5*(binEdges[0][1:] + binEdges[0][:-1])
         content, stat = root_to_array(self.infileName,
                                       self.branchName,
                                       method = "interpolate",
-                                      **kwargs)
-        return content
+                                      binEdges = binEdges)
+        return binCenters*content
 
 # Everything from here on depends on the tree structure
 # of the cross section file you're using.

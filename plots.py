@@ -310,7 +310,7 @@ class fit_and_ratio_rate_plot (plot):
         
     def add(self, fitter, label = None, color = None, **kwargs):
         if self.style in ['errorbar', 'errorband', 'errorbandstep']:
-            yerr = fitter.FD_rate_statErr
+            yerr = fitter.ratePred_statErr
         else:
             yerr = None
         NDNomLine, = self.plot(self.axUp,
@@ -336,7 +336,7 @@ class fit_and_ratio_rate_plot (plot):
         self.plot(self.axLo,
                   fitter.Ebins,
                   (fitter.fluxPred - target)/denom,
-                  yerr = yerr,
+                  yerr = np.zeros_like(yerr),
                   color = NDNomLine.get_color())
         
         self.axUp.legend(self.legLineList,
@@ -1547,7 +1547,7 @@ class L_curve_curvature_plot (plot):
         if fitter:
             self.add(fitter, **kwargs)
 
-        self.ax.semilogx()
+        self.ax.loglog()
         self.ax.set_xlabel(r'$\lambda$')
         self.ax.set_ylabel(r'Curvature')
 

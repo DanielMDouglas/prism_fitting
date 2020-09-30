@@ -239,3 +239,6 @@ EbinUpEdges, OAbinUpEdges, zbinUpEdges = root_to_axes(nomFileName, "ND_nu_ppfx/L
 
 EbinEdges = np.concatenate([EbinLowEdges, EbinUpEdges[-1:]])
 OAbinEdges = np.concatenate([OAbinLowEdges, OAbinUpEdges[-1:]])
+
+EbinWidths = EbinEdges[1:] - EbinEdges[:-1]
+OAbinWidths = OAbinEdges[1:] - OAbinEdges[:-1]

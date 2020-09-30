@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 
 class flux_fitter:
-    def __init__(self, beamMode, FDfromFlavor, FDtoFlavor, NDflavor, oscParam = None, Erebin = 10, OArebin = 1, useHC = True):
+    def __init__(self, beamMode, FDfromFlavor, FDtoFlavor, NDflavor, oscParam = None, Erebin = 1, OArebin = 1, useHC = True):
         """
         flux_fitter object which holds fluxes, settings, and solutions to 
         DUNE-PRISM style flux matching problems
@@ -22,6 +22,9 @@ class flux_fitter:
 
         self.EbinEdges = EbinEdges
         self.OAbinEdges = OAbinEdges
+
+        self.EbinWidths = EbinWidths
+        self.OAbinWidths = OAbinWidths
         
         # if we're using alternative horn currents, establish another set of bins for those
         if useHC:
@@ -41,18 +44,22 @@ class flux_fitter:
         if type(self.Erebin) == np.ndarray:
             self.Ebins = average_by_bin_edge(self.Ebins, Ebins, self.Erebin)
             self.EbinEdges = self.Erebin
+            self.EbinWidths = self.EbinEdges[1:] - self.EbinEdges[:-1]
         elif type(self.Erebin) == int:
             self.Ebins = average(self.Ebins, self.Erebin)
             self.EbinEdges = self.EbinEdges[::self.Erebin]
+            self.EbinWidths = self.EbinEdges[1:] - self.EbinEdges[:-1]
 
         # likewise with off-axis position
         self.OArebin = OArebin
         if type(self.OArebin) == np.ndarray:
             self.OAbins = average_by_bin_edge(self.OAbins, OAbins, self.OArebin)
             self.OAbinEdges = self.OArebin
+            self.OAbinWidths = self.OAbinEdges[1:] - self.OAbinEdges[:-1]
         elif type(self.OArebin) == int:
             self.OAbins = average(self.OAbins, self.OArebin)
             self.OAbinEdges = self.OAbinEdges[::self.OArebin]
+            self.OAbinWidths = self.OAbinEdges[1:] - self.OAbinEdges[:-1]
 
         # set flavor information
         self.beamMode = beamMode
@@ -93,8 +100,8 @@ class flux_fitter:
         """
         Load cross sections for the set flavors
         """
-        self.NDxSec = self.Ebins*xSec[self.NDflavor]["total"].load(binEdges = [self.EbinEdges])
-        self.FDxSec = self.Ebins*xSec[self.FDtoFlavor]["total"].load(binEdges = [self.EbinEdges])
+        self.NDxSec = xSec[self.NDflavor]["total"].load(binEdges = [self.EbinEdges])
+        self.FDxSec = xSec[self.FDtoFlavor]["total"].load(binEdges = [self.EbinEdges])
         
     def load_FD_nom(self):
         """
@@ -106,7 +113,7 @@ class flux_fitter:
         self.FD_oscillated = self.FD_unoscillated*self.Posc
         self.target = self.FD_oscillated
 
-        self.FD_rate = FDscale*self.FD_oscillated*self.FDxSec
+        self.FD_rate = FDscale*self.FD_oscillated*self.FDxSec*self.EbinWidths
         self.FD_rate_statErr = np.sqrt(self.FD_rate)
 
     def load_ND_OA_nom(self):
@@ -116,7 +123,7 @@ class flux_fitter:
         flux = ND_nominal[self.beamMode][self.NDflavor]
         self.ND_OA = flux.load(binEdges = [self.EbinEdges, self.OAbinEdges])
 
-        self.ND_OA_rate = NDscale*(self.ND_OA.T*self.NDxSec).T
+        self.ND_OA_rate = NDscale*(self.ND_OA.T*self.NDxSec*self.EbinWidths).T
         self.ND_OA_rate_statErr = np.sqrt(self.ND_OA_rate)
 
         self.ND_OA_loaded = True
@@ -135,7 +142,7 @@ class flux_fitter:
         else:
             self.ND_HC = np.ndarray((len(self.Ebins), 0))
             
-        self.ND_HC_rate = NDscale*(self.ND_HC.T*self.NDxSec).T
+        self.ND_HC_rate = NDscale*(self.ND_HC.T*self.NDxSec*self.EbinWidths).T
         self.ND_HC_rate_statErr = np.sqrt(self.ND_HC_rate)
 
         self.ND_HC_loaded = True
