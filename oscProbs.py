@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 from utils import *
 import sys
 import os
@@ -8,8 +10,8 @@ if 'PROB3ROOT' in os.environ:
 else:
     Prob3Root = os.path.join(os.getcwd(), "Prob3")
     os.environ['PROB3ROOT'] = Prob3Root
-    print "[WARNING] Environment variable PROB3ROOT is unset! Using default location:"
-    print Prob3Root
+    print ("[WARNING] Environment variable PROB3ROOT is unset! Using default location:")
+    print (Prob3Root)
 
 sys.path.append(os.path.dirname(Prob3Root))    
 from Prob3 import BargerPropagator

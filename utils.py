@@ -13,9 +13,9 @@ def root_to_array(infileName, branchName, binEdges = [], method = "average"):
              TH.GetNbinsZ()]
     con = np.ndarray(shape)
     err = np.ndarray(shape)
-    for i in xrange(shape[0]):
-        for j in xrange(shape[1]):
-            for k in xrange(shape[2]):
+    for i in range(shape[0]):
+        for j in range(shape[1]):
+            for k in range(shape[2]):
                 con[i,j,k] = TH.GetBinContent(i+1, j+1, k+1)
                 err[i,j,k] = TH.GetBinError(i+1, j+1, k+1)
     infile.Close()
@@ -152,7 +152,7 @@ def resize_hist_2(oldHist, oldBinsX, newBinsX, oldBinsY, newBinsY):
 
 def rebin(oldHist, rebinF, axis = 0):
     oldShape = oldHist.shape
-    newShape = oldShape[:axis] + (oldShape[axis]/rebinF, rebinF) + oldShape[axis+1:]
+    newShape = oldShape[:axis] + (oldShape[axis]//rebinF, rebinF) + oldShape[axis+1:]
     newHist = np.sum(oldHist.reshape(newShape), axis = axis + 1)
     return newHist
 

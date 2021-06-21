@@ -56,6 +56,7 @@ class plot (object):
             self.fig.savefig(fileName, *args, **kwargs)
     def plot(self, ax, *args, **kwargs):
         if self.style == "plot":
+
             return ax.plot(*args, **kwargs)
         elif self.style == "step":
             return ax.step(*args, where = 'mid', **kwargs)
@@ -65,7 +66,7 @@ class plot (object):
             yerr = kwargs.pop('yerr')
             lower = args[1] - yerr
             upper = args[1] + yerr
-            band = ax.fill_between(args[0], lower, upper, alpha = 0.5)
+            band = ax.fill_between(args[0], lower, upper, alpha = 0.1)
             return ax.plot(*args, **kwargs)
         elif self.style == "errorbandstep":
             yerr = kwargs.pop('yerr')
@@ -80,6 +81,7 @@ class plot (object):
 class fit_and_ratio_plot (plot):
     def __init__(self, fitter = None, useTarget = True,
                  useFit = True, title = None, Ebounds = True,
+                 xlim = (0, 10),
                  *args, **kwargs):
         super(fit_and_ratio_plot, self).__init__(*args, **kwargs)
         bandBounds = (0.16, 0.84)
@@ -103,22 +105,31 @@ class fit_and_ratio_plot (plot):
             if useFit:
                 self.add(fitter, **kwargs)
             
-        self.axUp.set_xlim(0, 10)
+        self.axUp.set_xlim(*xlim)
+        self.axLo.set_xlim(*xlim)
+
         self.axUp.set_xticklabels([])
         self.axUp.grid(True, which = 'both')
         self.axUp.set_ylabel(r'$\Phi$ [cm$^{-2}$ per POT per GeV]', labelpad = 15)
 
         self.axLo.grid(True)
-        self.axLo.set_xlim(0, 10)
         self.axLo.set_xlabel(r'$E_\nu$ [GeV]')
         if "ylabel" in kwargs:
             self.axLo.set_ylabel(kwargs["ylabel"], labelpad = 5)
         else:
-            self.axLo.set_ylabel(r'$\frac{ND - FD (osc.)}{FD (unosc.)}$', labelpad = 5)
+            self.axLo.set_ylabel(r'$\frac{ND - \mathrm{target}}{\mathrm{target}}$', labelpad = 5)
         
-        self.axLo.set_ylim(-0.06, 0.06)
-        self.axLo.set_yticks([-0.04, -0.02, 0, 0.02, 0.04])
-        self.axLo.set_yticklabels(["-4\%", "-2\%", "0\%", "2\%", "4\%"])
+        # self.axLo.set_ylim(-0.06, 0.06)
+        # self.axLo.set_yticks([-0.04, -0.02, 0, 0.02, 0.04])
+        # self.axLo.set_yticklabels(["-4\%", "-2\%", "0\%", "2\%", "4\%"])
+
+        # self.axLo.set_ylim(-0.6, 0.6)
+        # self.axLo.set_yticks([-0.5, -0.25, 0, 0.25, 0.5])
+        # self.axLo.set_yticklabels(["-50\%", "-25\%", "0\%", "25\%", "50\%"])
+        self.axLo.set_ylim(-0.25, 0.25)
+        self.axLo.set_yticks([-0.2, -0.1, 0, 0.1, 0.2])
+        self.axLo.set_yticklabels(["-20\%", "-10\%", "0\%", "10\%", "20\%"])
+
         self.axLo.grid(True, which = 'both')
 
         self.fig.tight_layout()
@@ -187,7 +198,7 @@ class fit_and_ratio_plot (plot):
         self.legLineList.append(NDNomLine)
         
         if not label:
-            self.legLabelList.append(r'Fluxes up to ' + str(fitter.maxOA) + r'm')
+            self.legLabelList.append(None)
         else:
             self.legLabelList.append(label)
 
@@ -210,6 +221,7 @@ class fit_and_ratio_plot (plot):
 class fit_and_ratio_rate_plot (plot):
     def __init__(self, fitter = None, useTarget = True,
                  useFit = True, title = None, Ebounds = True,
+                 xlim = (0, 10),
                  *args, **kwargs):
         super(fit_and_ratio_rate_plot, self).__init__(*args, **kwargs)
         bandBounds = (0.16, 0.84)
@@ -232,41 +244,67 @@ class fit_and_ratio_rate_plot (plot):
                 self.add_target(fitter, Ebounds)
             if useFit:
                 self.add(fitter, **kwargs)
+
+        self.axUp.set_xlim(*xlim)
+        self.axLo.set_xlim(*xlim)
             
-        self.axUp.set_xlim(0, 10)
         self.axUp.set_xticklabels([])
         self.axUp.grid(True, which = 'both')
-        self.axUp.set_ylabel(r'Event Rate [events per bin per year]', labelpad = 15)
+        self.axUp.set_ylabel(r'Event Rate [events per bin]', labelpad = 15)
 
         self.axLo.grid(True)
-        self.axLo.set_xlim(0, 10)
         self.axLo.set_xlabel(r'$E_\nu$ [GeV]')
         if "ylabel" in kwargs:
             self.axLo.set_ylabel(kwargs["ylabel"], labelpad = 5)
         else:
-            self.axLo.set_ylabel(r'$\frac{ND - FD (osc.)}{FD (unosc.)}$', labelpad = 5)
+            self.axLo.set_ylabel(r'$\frac{ND - \mathrm{target}}{\mathrm{target}}$', labelpad = 5)
         
-        self.axLo.set_ylim(-0.06, 0.06)
-        self.axLo.set_yticks([-0.04, -0.02, 0, 0.02, 0.04])
-        self.axLo.set_yticklabels(["-4\%", "-2\%", "0\%", "2\%", "4\%"])
+        # self.axLo.set_ylim(-0.60, 0.60)
+        # self.axLo.set_yticks([-0.50, -0.25, 0, 0.25, 0.50])
+        # self.axLo.set_yticklabels(["-50\%", "-25\%", "0\%", "25\%", "50\%"])
+        self.axLo.set_ylim(-0.25, 0.25)
+        self.axLo.set_yticks([-0.2, -0.1, 0, 0.1, 0.2])
+        self.axLo.set_yticklabels(["-20\%", "-10\%", "0\%", "10\%", "20\%"])
         self.axLo.grid(True, which = 'both')
 
         self.fig.tight_layout()
 
         self.full_flux = True
 
-    def add_target(self, fitter, label = None,
+    def add_target(self, fitter, label = None, full_flux = True, scatter = False,
                    Ebounds = True, color = 'black', **kwargs):
+        self.full_flux = full_flux
+        if full_flux:
+            self.target = fitter.FD_oscillated
+        else:
+            self.target = fitter.target
         if self.style in ['errorbar', 'errorband', 'errorbandstep']:
             yerr = fitter.FD_rate_statErr
         else:
             yerr = None
-        targetNomLine, = self.plot(self.axUp,
-                                   fitter.Ebins,
-                                   fitter.FD_rate,
-                                   yerr = yerr,
-                                   color = color,
-                                   **kwargs)
+        if scatter:
+            targetNomLine = self.axUp.errorbar(fitter.Ebins,
+                                               fitter.FD_rate,
+                                               yerr = yerr,
+                                               xerr = 0.5*fitter.EbinWidths,
+                                               color = color,
+                                               ls = 'none',
+                                               **kwargs)
+            self.axLo.errorbar(fitter.Ebins,
+                               np.zeros_like(fitter.Ebins),
+                               yerr = yerr/fitter.FD_rate,
+                               xerr = 0.5*fitter.EbinWidths,
+                               color = color,
+                               ls = 'none',
+                               **kwargs)
+        else:
+            targetNomLine, = self.plot(self.axUp,
+                                       fitter.Ebins,
+                                       fitter.FD_rate,
+                                       yerr = yerr,
+                                       color = color,
+                                       **kwargs)
+        
         if not label:
             label = ''.join([r'FD ',
                              LaTeXflavor[fitter.FDfromFlavor],
@@ -283,14 +321,14 @@ class fit_and_ratio_rate_plot (plot):
             self.axUp.axvline(x = fitter.Ebounds[1],
                               ls = '--',
                               color = 'red')
-            self.axUp.arrow(fitter.Ebounds[0], 3.85e-16,
+            self.axUp.arrow(fitter.Ebounds[0], 0.5*self.axUp.get_ylim()[-1],
                             0.15, 0,
-                            width = 2.e-18,
+                            width = 0.01*self.axUp.get_ylim()[-1],
                             head_length = 0.05,
                             color = 'red')
-            self.axUp.arrow(fitter.Ebounds[1], 0.35e-16,
+            self.axUp.arrow(fitter.Ebounds[1], 0.5*self.axUp.get_ylim()[-1],
                             -0.15, 0,
-                            width = 2.e-18,
+                            width = 0.01*self.axUp.get_ylim()[-1],
                             head_length = 0.05,
                             color = 'red')
         
@@ -301,8 +339,12 @@ class fit_and_ratio_rate_plot (plot):
                               ls = '--',
                               color = 'red')
 
-        self.axUp.set_ylim(-0.2*np.max(fitter.FD_rate),
-                           1.2*np.max(fitter.FD_rate))
+        if yerr is not None:
+            self.axUp.set_ylim(-0.2*np.max(fitter.FD_rate+yerr),
+                               1.2*np.max(fitter.FD_rate+yerr))
+        else:
+            self.axUp.set_ylim(-0.2*np.max(fitter.FD_rate),
+                               1.2*np.max(fitter.FD_rate))
         
         self.axUp.legend(self.legLineList,
                          self.legLabelList,
@@ -322,21 +364,23 @@ class fit_and_ratio_rate_plot (plot):
         self.legLineList.append(NDNomLine)
         
         if not label:
-            self.legLabelList.append(r'Fluxes up to ' + str(fitter.maxOA) + r'm')
+            self.legLabelList.append(None)
         else:
             self.legLabelList.append(label)
 
         if self.full_flux:
             target = fitter.FD_oscillated
-            # denom = fitter.FD_oscillated
-            denom = fitter.FD_unoscillated
+            print ("thing!")
+            denom = fitter.FD_oscillated
+            # denom = fitter.FD_unoscillated
         else:
+            print ("wrong thing :(")
             target = self.target
             denom = self.target
         self.plot(self.axLo,
                   fitter.Ebins,
-                  (fitter.fluxPred - target)/denom,
-                  yerr = np.zeros_like(yerr),
+                  (fitter.ratePred - fitter.FD_rate)/fitter.FD_rate,
+                  yerr = fitter.ratePred_statErr/fitter.FD_rate,
                   color = NDNomLine.get_color())
         
         self.axUp.legend(self.legLineList,
@@ -344,7 +388,7 @@ class fit_and_ratio_rate_plot (plot):
                          **self.legArgs)
 
 class fit_and_ratio_plot_with_sliders (plot):
-    def __init__(self, fitter = None, useTarget = True, useFit = True, title = None, Ebounds = True, regLims = [-12, -3], *args, **kwargs):
+    def __init__(self, fitter = None, useTarget = True, useFit = True, title = None, Ebounds = True, regLims = [-12, -3], calcKwargs = dict(), *args, **kwargs):
         super(fit_and_ratio_plot_with_sliders, self).__init__(**kwargs)
         from matplotlib.widgets import Slider, Button, RadioButtons
         
@@ -426,6 +470,8 @@ class fit_and_ratio_plot_with_sliders (plot):
 
         # self.axLoBoundSlider.set
 
+        self.calcKwargs = calcKwargs
+        
         self.fig.tight_layout()
 
         self.full_flux = True
@@ -493,7 +539,7 @@ class fit_and_ratio_plot_with_sliders (plot):
         self.legLineList.append(NDNomLine)
         
         if not label:
-            self.legLabelList.append(r'Fluxes up to ' + str(fitter.maxOA) + r'm')
+            self.legLabelList.append(None)
         else:
             self.legLabelList.append(label)
 
@@ -528,7 +574,7 @@ class fit_and_ratio_plot_with_sliders (plot):
                 denom = self.target
 
             fitter.set_fit_region(energies = (loBound, hiBound))
-            fitter.calc_coeffs(reg, reg)
+            fitter.calc_coeffs(reg, reg, **self.calcKwargs)
             self.legLineList[i+1].set_ydata(fitter.fluxPred)
             self.ratioLineList[i].set_ydata((fitter.fluxPred - target)/denom)
         # self.loBoundLineUp.set_xdata([loBound, loBound])
@@ -539,7 +585,7 @@ class fit_and_ratio_plot_with_sliders (plot):
         self.fig.canvas.draw_idle()
 
 class slider_super_plot (plot):
-    def __init__(self, fitter = None, useTarget = True, useFit = True, title = None, Ebounds = True, regLims = [-12, -3], **kwargs):
+    def __init__(self, fitter = None, useTarget = True, useFit = True, title = None, Ebounds = True, regLims = [-12, -3], calcKwargs = dict(), **kwargs):
         super(slider_super_plot, self).__init__(**kwargs)
         from matplotlib.widgets import Slider, Button, RadioButtons
         
@@ -610,11 +656,11 @@ class slider_super_plot (plot):
             self.legArgs.update({"title": title})
 
         self.fitters = []
-        if fitter:
-            if useTarget:
-                self.add_target(fitter, Ebounds)
-            if useFit:
-                self.add(fitter, **kwargs)
+        # if fitter:
+        #     if useTarget:
+        #         self.add_target(fitter, Ebounds)
+        #     if useFit:
+        #         self.add(fitter, **kwargs)
             
         self.axFit.set_xlim(0, 10)
         self.axFit.set_xticklabels([])
@@ -679,6 +725,15 @@ class slider_super_plot (plot):
 
         self.full_flux = True
 
+        self.calcKwargs = calcKwargs
+
+        if fitter:
+            if useTarget:
+                self.add_target(fitter, Ebounds)
+            if useFit:
+                self.add(fitter, **kwargs)
+                
+
     def add_target(self, fitter, label = None, full_flux = True,
                    Ebounds = True, color = 'black', **kwargs):
         self.full_flux = full_flux
@@ -686,7 +741,7 @@ class slider_super_plot (plot):
             self.target = fitter.FD_oscillated
         else:
             self.target = fitter.target
-        targetNomLine, = self.plot(plot.axFit,
+        targetNomLine, = self.plot(self.axFit,
                                    fitter.Ebins,
                                    self.target,
                                    color = color,
@@ -749,7 +804,7 @@ class slider_super_plot (plot):
         self.legLineList.append(NDNomLine)
         
         if not label:
-            self.legLabelList.append(r'Fluxes up to ' + str(fitter.maxOA) + r'm')
+            self.legLabelList.append(None)
         else:
             self.legLabelList.append(label)
 
@@ -792,7 +847,7 @@ class slider_super_plot (plot):
         curvatureLine, = self.axCurvature.plot(self.regRange[1:-1], np.zeros_like(self.regRange[1:-1]))
         self.curvatureLineList.append(curvatureLine)
 
-    def updateLcurves(self, fitter):
+    def updateLcurves(self, fitter, **kwargs):
         res = []
         sol = []
         for reg in self.regRange:
@@ -801,7 +856,7 @@ class slider_super_plot (plot):
             else:
                 HCreg = kwargs["HCreg"]
 
-            fitter.calc_coeffs(reg, HCreg, **kwargs)
+            fitter.calc_coeffs(reg, HCreg, **self.calcKwargs)
             res.append(fitter.residual_norm(**kwargs))
             sol.append(fitter.solution_norm(**kwargs))
 
@@ -822,7 +877,7 @@ class slider_super_plot (plot):
         curvatureLine, = self.axCurvature.plot(self.regRange[1:-1], curv)
         self.curvatureLineList.append(curvatureLine)
  
-    def updateRegSliders(self, val):
+    def updateRegSliders(self, val, **kwargs):
         reg = self.sReg.val
         loBound = self.sLoBound.val
         hiBound = self.sHiBound.val
@@ -836,7 +891,7 @@ class slider_super_plot (plot):
                 denom = self.target
 
             fitter.set_fit_region(energies = (loBound, hiBound))
-            fitter.calc_coeffs(reg, reg)
+            fitter.calc_coeffs(reg, reg, **self.calcKwargs)
             self.legLineList[i+1].set_ydata(fitter.fluxPred)
             self.ratioLineList[i].set_ydata((fitter.fluxPred - target)/denom)
             self.OAcoeffLineList[i].set_ydata(fitter.cOA)
@@ -863,7 +918,7 @@ class slider_super_plot (plot):
                 denom = self.target
 
             fitter.set_fit_region(energies = (loBound, hiBound))
-            fitter.calc_coeffs(reg, reg)
+            fitter.calc_coeffs(reg, reg, **self.calcKwargs)
             self.legLineList[i+1].set_ydata(fitter.fluxPred)
             self.ratioLineList[i].set_ydata((fitter.fluxPred - target)/denom)
             self.OAcoeffLineList[i].set_ydata(fitter.cOA)
@@ -931,8 +986,9 @@ class coeff_plot (plot):
 
     def add(self, fitter, label = None, color = None, HCplot = False, **kwargs):
 
-        self.HCax.set_xticks(fitter.HCbins)
-        self.HCax.set_xticklabels([str(HC) for HC in fitter.HCbins])
+        if self.HC:
+            self.HCax.set_xticks(fitter.HCbins)
+            self.HCax.set_xticklabels([str(HC) for HC in fitter.HCbins])
 
         self.plot(self.OAax,
                   fitter.OAbins,
@@ -1011,8 +1067,11 @@ class ND_flux_slice_plot (plot):
                                                upper,
                                                alpha = 0.5)
                 errLines.append(errLine)
-            meanLine, = self.ax.plot(fitter.Ebins,
-                                     fitter.ND[:,sliceInd])
+            # meanLine, = self.ax.plot(fitter.Ebins,
+            #                          fitter.ND[:,sliceInd])
+            meanLine, = self.plot(self.ax,
+                                  fitter.Ebins,
+                                  fitter.ND[:,sliceInd])
             labels.append(str(fitter.OAbins[sliceInd]) + " m")
             meanLines.append(meanLine)
 
@@ -1028,12 +1087,66 @@ class ND_flux_slice_plot (plot):
             
         # self.ax.set_xlim(np.min(fitter.Ebins), np.max(fitter.Ebins))
         self.ax.set_xlim(0, 5)
+
+        if "title" in kwargs:
+            self.ax.set_title(kwargs["title"])
+        else:
+            self.ax.set_title("ND Flux")
+        self.fig.tight_layout()
+
+class ND_ER_slice_plot (plot):
+    def __init__(self, fitter, slices = [0, 10, 20, 30, 40, 50, 60], **kwargs):
+        super(ND_ER_slice_plot, self).__init__(**kwargs)
+        self.fig = plt.figure()
+        self.ax = self.fig.gca()
         
-        self.ax.set_title("ND Flux")
+        self.ax.set_xlabel(r'$E_\nu$ [GeV]')
+        self.ax.set_ylabel(r'Event Rate [events per bin]')
+
+        meanLines = []
+        errLines = []
+        labels = []
+        for sliceInd in slices:
+            # if "ND_univs" in dir(fitter):
+            #     thisSlice = fitter.ND_univs[:,:,sliceInd]
+            #     lower, upper = np.quantile(thisSlice, [0.16, 0.84], axis = 0)
+            #     errLine = self.ax.fill_between(fitter.Ebins,
+            #                                    lower,
+            #                                    upper,
+            #                                    alpha = 0.5)
+            #     errLines.append(errLine)
+            meanLine, = self.plot(self.ax,
+                                  fitter.Ebins,
+                                  fitter.ND_rate[:,sliceInd],
+                                  yerr = fitter.ND_rate_statErr[:,sliceInd])
+            labels.append(str(fitter.OAbins[sliceInd]) + " m")
+            meanLines.append(meanLine)
+
+        if errLines:
+            self.ax.legend([(errLine, meanLine) for errLine, meanLine
+                            in zip(errLines, meanLines)],
+                           labels,
+                           frameon = False)
+        else:
+            self.ax.legend(meanLines,
+                           labels,
+                           frameon = False,
+                           ncol = 3)
+            
+        # self.ax.set_xlim(np.min(fitter.Ebins), np.max(fitter.Ebins))
+        self.ax.set_xlim(0, 5)
+        self.ax.semilogy()
+        
+        if "title" in kwargs:
+            self.ax.set_title(kwargs["title"])
+        else:
+            self.ax.set_title("ND Flux")
         self.fig.tight_layout()
 
 class FD_flux_plot (plot):
-    def __init__(self, fitter = None, title = "FD Oscillated Flux", aspect = None, figSize = (6.4, 4.8), legendOn = True, **kwargs):
+    def __init__(self, fitter = None, title = "FD Oscillated Flux",
+                 aspect = None, figSize = (6.4, 4.8), legendOn = True,
+                 xlim = (0, 10), **kwargs):
         super(FD_flux_plot, self).__init__(**kwargs)
         self.fig = plt.figure(figsize = figSize)
         self.ax = self.fig.gca()
@@ -1053,10 +1166,12 @@ class FD_flux_plot (plot):
         if "ymax" in kwargs:
             self.ymax = kwargs["ymax"]
         else:
-            self.ymax = 0
+            self.ymax = None
 
         if fitter:
              self.add(fitter, **kwargs)
+
+        self.ax.set_xlim(*xlim)
 
         self.ax.set_xlabel(r'$E_\nu$ [GeV]')
         self.ax.set_ylabel(r'$\Phi$ [cm$^{-2}$ per POT per GeV]')
@@ -1067,7 +1182,7 @@ class FD_flux_plot (plot):
         self.ax.set_title(title)
         self.fig.tight_layout()
      
-    def add(self, fitter, label = None, color = None, **kwargs):
+    def add(self, fitter, label = None, color = None, Ebounds = False, **kwargs):
         # if not label:
         #     label = r'FD ' + LaTeXflavor[fitter.FDfromFlavor] + r' $\rightarrow$ ' + LaTeXflavor[fitter.FDtoFlavor]
         self.legLabelList.append(label)
@@ -1083,18 +1198,38 @@ class FD_flux_plot (plot):
             
         line, = self.plot(self.ax,
                           fitter.Ebins,
-                          fitter.FD_oscillated,
+                          fitter.target,
                           color = color)
         
         self.legLineList.append(line)
+
+        if Ebounds:
+            self.ax.axvline(x = fitter.Ebounds[0],
+                              ls = '--',
+                              color = 'red')
+            self.ax.axvline(x = fitter.Ebounds[1],
+                              ls = '--',
+                              color = 'red')
+            self.ax.arrow(fitter.Ebounds[0], 0.5*self.ax.get_ylim()[-1],
+                            0.15, 0,
+                            width = 0.01*self.ax.get_ylim()[-1],
+                            head_length = 0.05,
+                            color = 'red')
+            self.ax.arrow(fitter.Ebounds[1], 0.5*self.ax.get_ylim()[-1],
+                            -0.15, 0,
+                            width = 0.01*self.ax.get_ylim()[-1],
+                            head_length = 0.05,
+                            color = 'red')
+     
         
         if self.legendOn:
             self.ax.legend(self.legLineList,
                            self.legLabelList,
                            **self.legArgs)
-        
-        self.ymax = max(self.ymax, 1.2*np.max(fitter.FD_oscillated))
-        self.ax.set_ylim(0, self.ymax)
+
+        if self.ymax:
+            self.ymax = max(self.ymax, 1.2*np.max(fitter.target))
+            self.ax.set_ylim(0, self.ymax)
 
         return line
 
@@ -1127,11 +1262,11 @@ class FD_flux_plot (plot):
         return line
          
     def add_fit(self, fitter, color = None, linestyle = None, label = r'ND Flux Match'):
-        line = self.plot(self.ax,
-                         fitter.Ebins,
-                         fitter.fluxPred,
-                         color = color,
-                         linestyle = linestyle)
+        line, = self.plot(self.ax,
+                          fitter.Ebins,
+                          fitter.fluxPred,
+                          color = color,
+                          linestyle = linestyle)
         self.legLineList.append(line)
         self.legLabelList.append(label)
         
@@ -1143,7 +1278,9 @@ class FD_flux_plot (plot):
         return line
             
 class FD_rate_plot (plot):
-    def __init__(self, fitter = None, title = "FD Event Rate", aspect = None, figSize = (6.4, 4.8), legendOn = True, style = "errorbandstep", **kwargs):
+    def __init__(self, fitter = None, title = "FD Event Rate", aspect = None,
+                 figSize = (6.4, 4.8), legendOn = True, style = "errorbandstep",
+                 xlim = (0, 10), **kwargs):
         super(FD_rate_plot, self).__init__(style = style, **kwargs)
 
         self.fig = plt.figure(figsize = figSize)
@@ -1169,6 +1306,8 @@ class FD_rate_plot (plot):
         if fitter:
              self.add(fitter, **kwargs)
 
+        self.ax.set_xlim(*xlim)
+             
         self.ax.set_xlabel(r'$E_\nu$ [GeV]')
         self.ax.set_ylabel(r'Event Rate [events per bin per year]')
 
@@ -1178,18 +1317,28 @@ class FD_rate_plot (plot):
         self.ax.set_title(title)
         self.fig.tight_layout()
      
-    def add(self, fitter, label = "FD Event Rate", **kwargs):
+    def add(self, fitter, label = "FD Event Rate", scatter = False, color = 'black', Ebounds = False, **kwargs):
         self.legLabelList.append(label)
 
         if self.style in ['errorbar', 'errorband', 'errorbandstep']:
             yerr = fitter.FD_rate_statErr
         else:
             yerr = None
-        line, = self.plot(self.ax,
-                          fitter.Ebins,
-                          fitter.FD_rate,
-                          yerr = yerr,
-                          **kwargs)
+        if scatter:
+            line = self.ax.errorbar(fitter.Ebins,
+                                     fitter.FD_rate,
+                                     xerr = 0.5*fitter.EbinWidths,
+                                     yerr = yerr,
+                                     color = color,
+                                     ls = 'none',
+                                     **kwargs)
+        else:
+            line, = self.plot(self.ax,
+                              fitter.Ebins,
+                              fitter.FD_rate,
+                              yerr = yerr,
+                              color = color,
+                              **kwargs)
         
         self.legLineList.append(line)
         
@@ -1197,22 +1346,45 @@ class FD_rate_plot (plot):
             self.ax.legend(self.legLineList,
                            self.legLabelList,
                            **self.legArgs)
+
+        if Ebounds:
+            self.ax.axvline(x = fitter.Ebounds[0],
+                              ls = '--',
+                              color = 'red')
+            self.ax.axvline(x = fitter.Ebounds[1],
+                              ls = '--',
+                              color = 'red')
+            self.ax.arrow(fitter.Ebounds[0], 0.5*self.ax.get_ylim()[-1],
+                            0.15, 0,
+                            width = 0.01*self.ax.get_ylim()[-1],
+                            head_length = 0.05,
+                            color = 'red')
+            self.ax.arrow(fitter.Ebounds[1], 0.5*self.ax.get_ylim()[-1],
+                            -0.15, 0,
+                            width = 0.01*self.ax.get_ylim()[-1],
+                            head_length = 0.05,
+                            color = 'red')
         
-        self.ymax = max(self.ymax, 1.2*np.max(fitter.FD_rate))
+        if yerr is not None:
+            print (np.max(fitter.FD_rate), np.max(fitter.FD_rate+yerr))
+            self.ymax = max(self.ymax, 1.2*np.max(fitter.FD_rate+yerr))
+        else:
+            self.ymax = max(self.ymax, 1.2*np.max(fitter.FD_rate))
+
         self.ax.set_ylim(0, self.ymax)
 
         return line
 
     def add_fit(self, fitter, label = r'ND Match', **kwargs):
         if self.style in ['errorbar', 'errorband', 'errorbandstep']:
-            yerr = fitter.FD_rate_statErr
+            yerr = fitter.ratePred_statErr
         else:
             yerr = None
-        line = self.plot(self.ax,
-                         fitter.Ebins,
-                         fitter.ratePred,
-                         yerr = yerr,
-                         **kwargs)
+        line, = self.plot(self.ax,
+                          fitter.Ebins,
+                          fitter.ratePred,
+                          yerr = yerr,
+                          **kwargs)
         self.legLineList.append(line)
         self.legLabelList.append(label)
         
@@ -1484,7 +1656,8 @@ class L_curve_plot (plot):
 
         self.ax.loglog()
         self.ax.set_xlabel(r'Residual Norm = $|P(\hat{\Phi}_{ND} \vec{c} - \hat{\vec{\Phi}}_{FD})|$')
-        self.ax.set_ylabel(r'Solution Norm = $|A \vec{c}|$')
+        # self.ax.set_ylabel(r'Solution Norm = $|A \vec{c}|$')
+        self.ax.set_ylabel(r'Stat. Var. Norm = $|P \sigma_{ND}|$')
 
         self.fig.tight_layout()
         
@@ -1508,7 +1681,8 @@ class L_curve_plot (plot):
 
             fitter.calc_coeffs(reg, HCreg, ND = ND, target = target)
             res.append(fitter.residual_norm(**kwargs))
-            sol.append(fitter.solution_norm(**kwargs))
+            # sol.append(fitter.solution_norm(**kwargs))
+            sol.append(fitter.statvar_norm(**kwargs))
 
         line, = self.ax.plot(res, sol)
 
@@ -1523,8 +1697,10 @@ class L_curve_plot (plot):
                 HCreg = kwargs["HCreg"]
 
             fitter.calc_coeffs(reg, HCreg, ND = ND, target = target)
+            # point = self.ax.scatter(fitter.residual_norm(**kwargs),
+            #                         fitter.solution_norm(**kwargs))
             point = self.ax.scatter(fitter.residual_norm(**kwargs),
-                                    fitter.solution_norm(**kwargs))
+                                    fitter.statvar_norm(**kwargs))
 
             self.legLabelList.append(r'$\lambda_{OA} = $'+float_to_sci(reg))
             self.legLineList.append(point)
@@ -1545,8 +1721,9 @@ class L_curve_curvature_plot (plot):
         self.legLineList = []
         
         if fitter:
-            self.add(fitter, **kwargs)
-
+            self.opt = self.add(fitter, **kwargs)
+            print (self.opt)
+            
         self.ax.loglog()
         self.ax.set_xlabel(r'$\lambda$')
         self.ax.set_ylabel(r'Curvature')
@@ -1573,24 +1750,31 @@ class L_curve_curvature_plot (plot):
 
             fitter.calc_coeffs(reg, HCreg, ND = ND, target = target, **kwargs)
             res.append(fitter.residual_norm(**kwargs))
-            sol.append(fitter.solution_norm(**kwargs))
+            # sol.append(fitter.solution_norm(**kwargs))
+            sol.append(fitter.statvar_norm(**kwargs))
 
+        fac = 1.
+            
         res = np.array(res)
         sol = np.array(sol)
         dl = np.diff(regRange)
         xi = np.log(sol)
         rho = np.log(res)
-        xi_prime = np.diff(xi)/dl
+        xi_prime = (1/fac)*np.diff(xi)/dl
         rho_prime = np.diff(rho)/dl
-        xi_prime_prime = np.diff(xi_prime)/dl[:-1]
+        xi_prime_prime = fac*np.diff(xi_prime)/dl[:-1]
         rho_prime_prime = np.diff(rho_prime)/dl[:-1]
 
         curv = 2*(rho_prime[:-1]*xi_prime_prime - rho_prime_prime*xi_prime[:-1])/np.power(np.power(rho_prime[:-1], 2) + np.power(xi_prime[:-1], 2), 3./2)
 
         line, = self.ax.plot(regRange[1:-1], curv)
 
-        maxCurv = np.max(np.abs(curv[~np.isnan(curv)]))
-        self.opt_l = regRange[1:-1][np.abs(curv) == maxCurv][0]
+        # maxCurv = np.max(np.abs(curv[~np.isnan(curv)]))
+        # self.opt_l = regRange[1:-1][np.abs(curv) == maxCurv][0]
+
+        maxCurv = np.max(curv[~np.isnan(curv)])
+        self.opt_l = regRange[1:-1][curv == maxCurv][0]
+
         if showOpt:
             self.ax.axvline(x = self.opt_l,
                             label = r'$\lambda = $'+str(self.opt_l),

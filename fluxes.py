@@ -1,3 +1,4 @@
+from __future__ import print_function
 from utils import *
 
 import os
@@ -31,16 +32,16 @@ else:
     # nomFileName = "../flux/DUNE_Flux_OffAxis_Nov2017Review_syst_shifts_finebin_HHCOnAxis.root"
     # nomFileName = "../flux/All_HC.root"
     nomFileName = "../flux/all_HC_test.root"
-    print "[WARNING] Environment variable DP_FLUX_FILE is unset! Using default location:"
-    print nomFileName
+    print ("[WARNING] Environment variable DP_FLUX_FILE is unset! Using default location:")
+    print (nomFileName)
 
 if 'DP_SYST_FILE' in os.environ:
     systFileName = os.environ['DP_SYST_FILE']
 else:
     # systFileName = "../flux/syst/FluxErrors_40mOffAxis_Total_BothBeamModes_AllSpecies.root"
     systFileName = nomFileName
-    print "[WARNING] Environment variable DP_SYST_FILE is unset! Using default location:"
-    print systFileName
+    print ("[WARNING] Environment variable DP_SYST_FILE is unset! Using default location:")
+    print (systFileName)
 
 # HCFileName = "../flux/syst/HigherHCFluxes.Fine.root"
 HCFileName = nomFileName

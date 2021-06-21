@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 from utils import *
 from fluxes import *
 from xSec import *
@@ -100,8 +102,8 @@ class flux_fitter:
         """
         Load cross sections for the set flavors
         """
-        self.NDxSec = xSec[self.NDflavor]["total"].load(binEdges = [self.EbinEdges])
-        self.FDxSec = xSec[self.FDtoFlavor]["total"].load(binEdges = [self.EbinEdges])
+        self.NDxSec = xSec[self.NDflavor]["CCInc"].load(binEdges = [self.EbinEdges])
+        self.FDxSec = xSec[self.FDtoFlavor]["CCInc"].load(binEdges = [self.EbinEdges])
         
     def load_FD_nom(self):
         """
@@ -113,7 +115,7 @@ class flux_fitter:
         self.FD_oscillated = self.FD_unoscillated*self.Posc
         self.target = self.FD_oscillated
 
-        self.FD_rate = FDscale*self.FD_oscillated*self.FDxSec*self.EbinWidths
+        self.FD_rate = FDscale*self.FD_oscillated*self.FDxSec#/self.EbinWidths
         self.FD_rate_statErr = np.sqrt(self.FD_rate)
 
     def load_ND_OA_nom(self):
@@ -123,11 +125,16 @@ class flux_fitter:
         flux = ND_nominal[self.beamMode][self.NDflavor]
         self.ND_OA = flux.load(binEdges = [self.EbinEdges, self.OAbinEdges])
 
-        self.ND_OA_rate = NDscale*(self.ND_OA.T*self.NDxSec*self.EbinWidths).T
+        print (NDOAruntimeSplit.shape, OAbinEdges.shape, self.OAbinEdges.shape)
+        self.OAruntimeSplit = rebin_by_bin_edge(NDOAruntimeSplit, OAbins, self.OAbinEdges)
+        
+        # self.ND_OA_rate = NDscale*self.OAruntimeSplit*(self.ND_OA.T*self.NDxSec/self.EbinWidths).T
+        self.ND_OA_rate = NDscale*self.OAruntimeSplit*(self.ND_OA.T*self.NDxSec).T
         self.ND_OA_rate_statErr = np.sqrt(self.ND_OA_rate)
 
         self.ND_OA_loaded = True
         if self.ND_HC_loaded:
+            self.runtimeSplit = np.concatenate((self.OAruntimeSplit, self.HCruntimeSplit))
             self.ND = np.concatenate((self.ND_OA, self.ND_HC), axis = 1)
             self.ND_rate = np.concatenate((self.ND_OA_rate, self.ND_HC_rate), axis = 1)
             self.ND_rate_statErr = np.concatenate((self.ND_OA_rate_statErr, self.ND_HC_rate_statErr), axis = 1)
@@ -139,14 +146,18 @@ class flux_fitter:
         if list(self.HCbins):
             self.ND_HC = 12*np.array([ND_HC_shifts[self.beamMode][self.NDflavor][current].load(binEdges = [self.EbinEdges])
                                       for current in self.HCbins]).T
+            self.HCruntimeSplit = NDHCruntimeSplit
         else:
             self.ND_HC = np.ndarray((len(self.Ebins), 0))
+            self.HCruntimeSplit = np.array([])
             
-        self.ND_HC_rate = NDscale*(self.ND_HC.T*self.NDxSec*self.EbinWidths).T
+        # self.ND_HC_rate = NDscale*self.HCruntimeSplit*(self.ND_HC.T*self.NDxSec/self.EbinWidths).T
+        self.ND_HC_rate = NDscale*self.HCruntimeSplit*(self.ND_HC.T*self.NDxSec).T
         self.ND_HC_rate_statErr = np.sqrt(self.ND_HC_rate)
 
         self.ND_HC_loaded = True
         if self.ND_OA_loaded:
+            self.runtimeSplit = np.concatenate((self.OAruntimeSplit, self.HCruntimeSplit))
             self.ND = np.concatenate((self.ND_OA, self.ND_HC), axis = 1)
             self.ND_rate = np.concatenate((self.ND_OA_rate, self.ND_HC_rate), axis = 1)
             self.ND_rate_statErr = np.concatenate((self.ND_OA_rate_statErr, self.ND_HC_rate_statErr), axis = 1)
@@ -198,7 +209,6 @@ class flux_fitter:
             self.ND_ppfx_univs = np.concatenate((self.ND_OA_ppfx_univs,
                                                  self.ND_HC_ppfx_univs),
                                                 axis = 2)
-
 
     def load_ND_HC_ppfx_systs(self):
         """
@@ -417,7 +427,7 @@ class flux_fitter:
         if self.other_systs_loaded:
             self.load_ND_HC_other_systs()
             
-    def calc_coeffs(self, OAreg, HCreg, ND = [None], target = [None], fluxTimesE = False, NDtoFD = NDtoFD, **kwargs):
+    def calc_coeffs(self, OAreg, HCreg, A = [None], ND = [None], target = [None], fluxTimesE = False, NDtoFD = NDtoFD, **kwargs):
         if not np.any(ND):
             ND = self.ND
         if not np.any(target):
@@ -431,14 +441,18 @@ class flux_fitter:
         nBinsHC = self.ND_HC.shape[1]
         
         # OA penalty term is a difference matrix
-        OA_penalty = np.diag(nBinsOA*[1]) - np.diag((nBinsOA - 1)*[1], k = 1)
+        # OA_penalty = np.diag(nBinsOA*[1]) - np.diag((nBinsOA - 1)*[1], k = 1)
         # # OA penalty term is the L1 norm
-        # OA_penalty = np.eye(nBinsOA)
+        OA_penalty = np.eye(nBinsOA)
         HC_penalty = np.eye(nBinsHC)
-        self.A = block_diag(OA_penalty, HC_penalty)
-        Gamma = block_diag(OAreg*OA_penalty, HCreg*HC_penalty)
+        if not np.any(A):
+            self.A = block_diag(OA_penalty, HC_penalty)
+        else:
+            self.A = A
+        # Gamma = block_diag(OAreg*OA_penalty, HCreg*HC_penalty)
+        Gamma = OAreg*self.A
         self.Gamma = Gamma
-
+        
         # weighting matrix for target flux
         P = np.diag(np.where(self.Ebins > self.Ebounds[1],
                              self.OutOfRegionFactors[1],
@@ -460,8 +474,8 @@ class flux_fitter:
         self.cHC = self.c[nBinsOA:]
 
         self.fluxPred = np.dot(self.ND, self.c)
-        self.ratePred = NDtoFD*np.dot(self.ND_rate, self.c)
-        self.ratePred_statErr = NDtoFD*np.sqrt(np.dot(self.ND_rate, np.power(self.c, 2)))
+        self.ratePred = NDtoFD*np.dot(self.ND_rate, self.c/self.runtimeSplit)
+        self.ratePred_statErr = NDtoFD*np.sqrt(np.dot(self.ND_rate, np.power((self.c/self.runtimeSplit), 2)))
         
     def calc_coeffs_DFT(self, OAreg, HCreg, filt, ND = [None], target = [None], fluxTimesE = False):
         if not np.any(ND):
@@ -603,7 +617,8 @@ class flux_fitter:
         if not np.any(target):
             target = self.target
 
-        return np.sqrt(np.sum(np.power(np.matmul(P, self.fluxPred - target), 2)))
+        # return np.sqrt(np.sum(np.power(np.matmul(P, self.fluxPred - target), 2)))
+        return np.sqrt(np.sum(np.power(np.matmul(P, self.ratePred - self.FD_rate), 2)))
     
     def solution_norm(self, A = None, **kwargs):
         if not np.any(A):
@@ -616,6 +631,8 @@ class flux_fitter:
                                                             np.dot(self.ND_ppfx_univs,
                                                                    self.c) - self.target),
                                                   2))))
+    def statvar_norm(self):
+        return np.sqrt(np.sum(np.power(np.matmul(self.P, self.ratePred_statErr), 2)))
 
     def set_coeffs(self, other):
         self.coeffs = other.coeff
