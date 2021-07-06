@@ -621,9 +621,10 @@ class flux_fitter:
         return np.sqrt(np.sum(np.power(np.matmul(P, self.ratePred - self.FD_rate), 2)))
     
     def solution_norm(self, A = None, **kwargs):
-        if not np.any(A):
+        if not np.any(A): # user specified an alternative penalty matrix
             A = self.A
-        return np.sqrt(np.sum(np.power(np.dot(A, self.c), 2)))
+        # NOTE: solution norm uses the UNWEIGHTED penalty matrix
+        return np.sqrt(np.sum(np.power(np.dot(A, self.c), 2))) 
 
     def variance_norm(self):
         if self.ppfx_systs_loaded:

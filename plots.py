@@ -1662,11 +1662,11 @@ class L_curve_plot (plot):
         self.fig.tight_layout()
         
     def add(self, fitter, regRange = np.logspace(-11, -5, 1000), highlight = [], **kwargs):
-        if "ND" in kwargs:
-            ND = kwargs["ND"]
+        if "ND" in kwargs: # user specified an alternative ND matrix
+            ND = kwargs["ND"] 
         else:
             ND = [None]
-        if "target" in kwargs:
+        if "target" in kwargs: # user specified an alternative target array
             target = kwargs["target"]
         else:
             target = [None]
@@ -1680,9 +1680,8 @@ class L_curve_plot (plot):
                 HCreg = kwargs["HCreg"]
 
             fitter.calc_coeffs(reg, HCreg, ND = ND, target = target)
-            res.append(fitter.residual_norm(**kwargs))
-            # sol.append(fitter.solution_norm(**kwargs))
-            sol.append(fitter.statvar_norm(**kwargs))
+            res.append(fitter.residual_norm(**kwargs)) # residual norm (sum of squared residuals)
+            sol.append(fitter.solution_norm(**kwargs)) # solution norm (UNWEIGHTED penalty matrix)
 
         line, = self.ax.plot(res, sol)
 
@@ -1690,17 +1689,15 @@ class L_curve_plot (plot):
             self.legLabelList.append(kwargs["label"])
             self.legLineList.append(line)
             
-        for reg in highlight:
+        for reg in highlight: # highlight certain points with a scatter marker
             if not "HCreg" in kwargs:
                 HCreg = reg
             else:
                 HCreg = kwargs["HCreg"]
 
             fitter.calc_coeffs(reg, HCreg, ND = ND, target = target)
-            # point = self.ax.scatter(fitter.residual_norm(**kwargs),
-            #                         fitter.solution_norm(**kwargs))
             point = self.ax.scatter(fitter.residual_norm(**kwargs),
-                                    fitter.statvar_norm(**kwargs))
+                                    fitter.solution_norm(**kwargs))
 
             self.legLabelList.append(r'$\lambda_{OA} = $'+float_to_sci(reg))
             self.legLineList.append(point)
